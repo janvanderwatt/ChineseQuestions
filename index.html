@@ -10,44 +10,52 @@
   <div class="container">
     <header>
       <h1>Chinese Q&A</h1>
-      <p class="subtitle">Ask questions about Chinese phrases and characters</p>
+      <p class="subtitle">Q1 only for now. Debug on right until API response stable.</p>
     </header>
 
-    <div class="form-group">
-      <h2>❓ What does this character mean?</h2>
-      <label>Character</label>
-      <input type="text" id="q1-char" placeholder="e.g., 很" maxlength="5">
-      <label>Sentence context</label>
-      <textarea id="q1-sentence" placeholder="e.g., 我的朋友很高"></textarea>
-      <button id="q1-submit">Submit</button>
-    </div>
+    <div class="app-shell">
+      <main class="main-column">
+        <div class="form-group">
+          <h2>What does this character mean?</h2>
+          <label for="q1-char">Character</label>
+          <input type="text" id="q1-char" placeholder="e.g., 很" maxlength="5" value="高">
+          <label for="q1-sentence">Sentence context</label>
+          <textarea id="q1-sentence" placeholder="e.g., 我的朋友很高">我的朋友很高</textarea>
+          <button id="q1-submit">Submit</button>
+        </div>
 
-    <div class="form-group">
-      <h2>❓ Why can't I use this phrase?</h2>
-      <label>Phrase you want to use</label>
-      <input type="text" id="q2-phrase-alt" placeholder="e.g., 段">
-      <label>Correct phrase in sentence</label>
-      <input type="text" id="q2-phrase-correct" placeholder="e.g., 矮">
-      <label>Full sentence</label>
-      <textarea id="q2-sentence-alt" placeholder="e.g., 我的朋友很矮"></textarea>
-      <button id="q2-submit">Submit</button>
-    </div>
+        <div id="response" class="response"></div>
 
-    <div class="form-group">
-      <h2>❓ Is this sentence natural?</h2>
-      <label>Your sentence</label>
-      <textarea id="q3-sentence" placeholder="Enter the sentence you want to check"></textarea>
-      <button id="q3-submit">Submit</button>
-    </div>
+        <div class="config-section">
+          <h3>Configuration</h3>
+          <label for="api-key">OpenRouter API Key</label>
+          <input type="password" id="api-key" placeholder="sk-or-...">
+          <button id="save-config">Save Config</button>
+          <p>Key stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank" rel="noreferrer">openrouter.ai</a></p>
+        </div>
+      </main>
 
-    <div id="response" class="response"></div>
-
-    <div class="config-section">
-      <h3>⚙️ Configuration</h3>
-      <label>OpenRouter API Key</label>
-      <input type="password" id="api-key" placeholder="sk-or-...">
-      <button id="save-config">Save Config</button>
-      <p>Key stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank">openrouter.ai</a></p>
+      <aside class="debug-column">
+        <div class="debug-panel">
+          <h3>Debug</h3>
+          <div class="debug-block">
+            <strong>Status</strong>
+            <pre id="debug-status">Idle</pre>
+          </div>
+          <div class="debug-block">
+            <strong>Prompt</strong>
+            <pre id="debug-prompt">Waiting for submit...</pre>
+          </div>
+          <div class="debug-block">
+            <strong>Raw API</strong>
+            <pre id="debug-raw">No response yet.</pre>
+          </div>
+          <div class="debug-block">
+            <strong>Parsed</strong>
+            <pre id="debug-parsed">No parsed content yet.</pre>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
 

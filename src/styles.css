@@ -13,9 +13,21 @@ body {
 }
 
 .container {
-  max-width: 700px;
+  max-width: 1180px;
   margin: 0 auto;
   padding: 1rem;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.main-column,
+.debug-column {
+  min-width: 0;
 }
 
 header {
@@ -47,6 +59,10 @@ h1 {
   font-size: 0.95rem;
   margin-bottom: 0.6rem;
   color: #1a8a7a;
+}
+
+.form-group textarea {
+  min-height: 88px;
 }
 
 .form-group label {
@@ -167,4 +183,53 @@ button:active {
 
 .config-section a {
   color: #1a8a7a;
+}
+
+.debug-panel {
+  position: sticky;
+  top: 1rem;
+  padding: 0.8rem;
+  border: 1px solid #d8ece8;
+  border-radius: 4px;
+  background: #f7fbfb;
+}
+
+.debug-panel h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.6rem;
+  color: #1a8a7a;
+}
+
+.debug-block + .debug-block {
+  margin-top: 0.65rem;
+}
+
+.debug-block strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.78rem;
+  color: #46625e;
+}
+
+.debug-block pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 220px;
+  overflow: auto;
+  padding: 0.55rem;
+  border-radius: 3px;
+  background: #eef6f5;
+  color: #163632;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .debug-panel {
+    position: static;
+  }
 }

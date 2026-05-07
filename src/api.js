@@ -1,23 +1,38 @@
 // OpenRouter API wrapper
 
-// Fallback CONFIG if not loaded from config.js
-if (typeof CONFIG === 'undefined') {
-  var CONFIG = {
-    OPENROUTER_API_KEY: '',
-    OPENROUTER_MODEL: 'openrouter/auto',
-    API_BASE: 'https://openrouter.ai/api/v1'
-  };
-}
+// Fallback config if config.js is missing.
+window.CONFIG = window.CONFIG || {
+  OPENROUTER_API_KEY: '',
+  OPENROUTER_MODEL: 'openrouter/auto',
+  API_BASE: 'https://openrouter.ai/api/v1'
+};
 
 class ChineseQAAPI {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.baseUrl = 'https://openrouter.ai/api/v1';
-    this.model = 'openrouter/auto';
+    this.baseUrl = window.CONFIG.API_BASE;
+    this.model = window.CONFIG.OPENROUTER_MODEL === 'openrouter/auto'
+      ? 'openai/gpt-4.1-mini'
+      : window.CONFIG.OPENROUTER_MODEL;
   }
 
   async query(question, context = '') {
     const prompt = this._buildPrompt(question, context);
+    const requestBody = {
+      model: this.model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful English-speaking Chinese language tutor. Explain in simple English with practical examples. Keep answers concise and clear.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 700
+    };
     
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
@@ -26,44 +41,80 @@ class ChineseQAAPI {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.apiKey}`
         },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a helpful English-speaking Chinese language tutor. Explain in simple English with practical examples. Keep answers concise and clear.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
       const data = await response.json();
-      
-      // Validate response structure
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        console.error('Invalid API response:', data);
-        throw new Error('Invalid response structure from API');
+
+      if (!response.ok) {
+        const apiMessage = data?.error?.message || data?.message || `API error: ${response.status}`;
+        throw new Error(apiMessage);
       }
       
-      const content = data.choices[0].message.content;
+      const content = this.extractContent(data);
       if (!content) {
-        throw new Error('Empty response from API');
+        const emptyError = new Error('Empty response from API');
+        emptyError.raw = data;
+        throw emptyError;
       }
       
-      return content;
+      return {
+        content,
+        prompt,
+        requestBody,
+        raw: data
+      };
     } catch (err) {
-      throw new Error(`API failed: ${err.message}`);
+      const wrappedError = new Error(`API failed: ${err.message}`);
+      if (err.raw) {
+        wrappedError.raw = err.raw;
+      }
+      throw wrappedError;
     }
+  }
+
+  extractContent(data) {
+    const message = data?.choices?.[0]?.message;
+    const content = message?.content;
+
+    if (typeof content === 'string' && content.trim()) {
+      return content.trim();
+    }
+
+    if (Array.isArray(content)) {
+      const text = content
+        .map(item => {
+          if (typeof item === 'string') {
+            return item;
+          }
+          if (item?.type === 'text' && typeof item.text === 'string') {
+            return item.text;
+          }
+          return '';
+        })
+        .join('\n')
+        .trim();
+
+      if (text) {
+        return text;
+      }
+    }
+
+    const fallback = data?.choices?.[0]?.text;
+    if (typeof fallback === 'string' && fallback.trim()) {
+      return fallback.trim();
+    }
+
+    const reasoning = message?.reasoning || message?.reasoning_text || data?.choices?.[0]?.reasoning;
+    if (typeof reasoning === 'string' && reasoning.trim()) {
+      return reasoning.trim();
+    }
+
+    if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
+      return JSON.stringify(message.tool_calls, null, 2);
+    }
+
+    return '';
   }
 
   _buildPrompt(question, context) {
