@@ -1,10 +1,19 @@
 // OpenRouter API wrapper
 
+// Fallback CONFIG if not loaded from config.js
+if (typeof CONFIG === 'undefined') {
+  var CONFIG = {
+    OPENROUTER_API_KEY: '',
+    OPENROUTER_MODEL: 'openrouter/auto',
+    API_BASE: 'https://openrouter.ai/api/v1'
+  };
+}
+
 class ChineseQAAPI {
   constructor(apiKey) {
     this.apiKey = apiKey;
-    this.baseUrl = CONFIG.API_BASE;
-    this.model = CONFIG.OPENROUTER_MODEL;
+    this.baseUrl = 'https://openrouter.ai/api/v1';
+    this.model = 'openrouter/auto';
   }
 
   async query(question, context = '') {
