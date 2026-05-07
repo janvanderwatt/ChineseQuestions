@@ -273,7 +273,7 @@ class ChineseQAApp {
     }
 
     const question = `What does the character "${char}" mean in this sentence: "${sentence}"?`;
-    await this.submitQuery(question, 'Q1');
+    await this.submitQuery(question, 'Q1', sentence);
   }
 
   async handleQuestion2() {
@@ -286,8 +286,8 @@ class ChineseQAApp {
       return;
     }
 
-    const question = `Why can't I use "${phrase1}" instead of "${phrase2}" in the sentence: "${sentence}"?`;
-    await this.submitQuery(question, 'Q2');
+    const question = `In the sentence "${sentence}", why can't I use "${phrase1}" instead of "${phrase2}"? If "${phrase1}" looks like a typo, guess the most likely intended word and explain whether that corrected sentence is natural.`;
+    await this.submitQuery(question, 'Q2', sentence);
   }
 
   async handleQuestion3() {
@@ -299,10 +299,10 @@ class ChineseQAApp {
     }
 
     const question = `Is this a natural-sounding sentence in Chinese: "${sentence}"? If not, how would you rephrase it?`;
-    await this.submitQuery(question, 'Q3');
+    await this.submitQuery(question, 'Q3', sentence);
   }
 
-  async submitQuery(question, source) {
+  async submitQuery(question, source, context = '') {
     if (!this.api) {
       this.initAPI('');
     }
@@ -311,13 +311,21 @@ class ChineseQAApp {
 
     this.updateDebug('status', `Submitting ${source} via ${mode} mode...`);
     this.updateDebug('prompt', question);
+    this.updateDebug('roles', 'Waiting for request payload...');
+    this.updateDebug('context', context || '(empty)');
     this.updateDebug('raw', 'Waiting for API response...');
     this.updateDebug('parsed', 'Waiting for parsed content...');
     this.showResponse('Loading...', false, source);
 
     try {
-      const result = await this.api.query(question);
+      const result = await this.api.query(question, context);
+      const rolesSent = Array.isArray(result?.requestBody?.messages)
+        ? result.requestBody.messages.map(m => m?.role || '(missing role)')
+        : [];
+
       this.updateDebug('status', `${source} complete via ${result.mode || mode}.`);
+      this.updateDebug('roles', rolesSent.length > 0 ? rolesSent.join(' -> ') : 'No message roles found');
+      this.updateDebug('context', context || '(empty)');
       this.updateDebug('raw', result.raw);
       this.updateDebug('parsed', result.content);
       this.showResponse(result.content, false, source);
