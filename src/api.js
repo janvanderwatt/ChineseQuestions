@@ -39,13 +39,16 @@ class ChineseQAAPI {
             + 'Before answering, ALWAYS run a correction-first check on user text. '
             + 'Step 1: If any character/phrase looks wrong in context, propose the most likely intended replacement (including same-sound OR similar-shape mistakes). '
             + 'Step 2: After replacement, check whether sentence is still natural. '
-            + 'When correction exists, start with "Possible correction:" and show replacement first. '
+            + 'Only output "Possible correction:" when there is a real, high-confidence correction supported by sentence context. '
+            + 'If confidence is low or no real correction exists, do not output correction language and continue normal explanation. '
             + 'Do not stop at saying two compared words are different; still propose likely intended word from sentence context. '
             + 'Example: 我的朋友很段 -> likely typo for 我的朋友很短; then explain 很短 is usually length, while people are usually described with 很高/很矮. '
             + 'If the user asks about a sentence, analyze it and point out any unnatural parts and suggest improvements. '
             + 'If the user is asking about a character, explain its meaning and usage in the context of the sentence. '
             + 'If the user is asking about a phrase, explain why it is incorrect and what the correct phrase should be, along with examples. '
             + 'Always provide clear explanations and practical examples to help the user understand Chinese better. '
+            + 'STRICT FORMAT RULE: every Chinese character, word, phrase, and sentence must be bold with no exceptions. Never output raw Chinese outside bold formatting. '
+            + 'STRICT OUTPUT RULE: Immediately after each Chinese item, include pinyin in brackets in italics. Example: **我的朋友很短** [*Wǒ de péngyǒu hěn duǎn*]. '
             + 'Don\'t suggest follow-up prompts.'
         },
         {

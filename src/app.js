@@ -272,7 +272,7 @@ class ChineseQAApp {
       return;
     }
 
-    const question = `What does the character "${char}" mean in this sentence: "${sentence}"?`;
+    const question = `What does the character "${char}" mean (or do) in this sentence: "${sentence}"?`;
     await this.submitQuery(question, 'Q1', sentence);
   }
 
@@ -286,7 +286,7 @@ class ChineseQAApp {
       return;
     }
 
-    const question = `In the sentence "${sentence}", why can't I use "${phrase1}" instead of "${phrase2}"? If "${phrase1}" looks like a typo, guess the most likely intended word and explain whether that corrected sentence is natural.`;
+    const question = `In the sentence "${sentence}", can I use "${phrase1}" instead of "${phrase2}"? If "${phrase1}" looks like a typo, guess the most likely intended word and explain whether that corrected sentence is natural.`;
     await this.submitQuery(question, 'Q2', sentence);
   }
 
@@ -298,7 +298,7 @@ class ChineseQAApp {
       return;
     }
 
-    const question = `Is this a natural-sounding sentence in Chinese: "${sentence}"? If not, how would you rephrase it?`;
+    const question = `Does this sentence sound natural to native Chinese speakers: "${sentence}"? If not, how would you rephrase it?`;
     await this.submitQuery(question, 'Q3', sentence);
   }
 
@@ -431,6 +431,21 @@ class ChineseQAApp {
         continue;
       }
 
+      // Horizontal rule support for markdown separators like ---
+      if (/^\s*([-*_])(?:\s*\1){2,}\s*$/.test(line)) {
+        closeList();
+        html.push('<hr>');
+        continue;
+      }
+
+      const headingMatch = line.match(/^\s*(#{1,6})\s+(.+)$/);
+      if (headingMatch) {
+        closeList();
+        const level = headingMatch[1].length;
+        html.push(`<h${level}>${this.formatInlineMarkdown(headingMatch[2].trim())}</h${level}>`);
+        continue;
+      }
+
       const listMatch = line.match(/^\s*[-*]\s+(.*)$/);
       if (listMatch) {
         if (!inList) {
@@ -457,6 +472,7 @@ class ChineseQAApp {
     return text
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/_(.+?)_/g, '<em>$1</em>')
       .replace(/`([^`]+?)`/g, '<code>$1</code>')
       .replace(/\[([^\]]+?)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
   }

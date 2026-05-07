@@ -13,9 +13,24 @@ body {
 }
 
 .container {
+  width: min(680px, 100%);
   max-width: 680px;
   margin: 0 auto;
   padding: 1rem;
+}
+
+@media (min-width: 861px) {
+  .container {
+    width: 85%;
+    max-width: none;
+  }
+}
+
+@media (max-width: 860px) and (orientation: landscape) {
+  .container {
+    width: 99vw;
+    max-width: none;
+  }
 }
 
 header {

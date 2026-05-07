@@ -19,7 +19,7 @@ const q2 = {
   phrase_correct: '矮',
   sentence: '我的朋友很矮'
 };
-const q2_prompt = `Why can't I use "${q2.phrase_alt}" instead of "${q2.phrase_correct}" in the sentence: "${q2.sentence}"?`;
+const q2_prompt = `Can I use "${q2.phrase_alt}" instead of "${q2.phrase_correct}" in the sentence: "${q2.sentence}"?`;
 console.log('Q2 Test:');
 console.log('  Input:', q2);
 console.log('  Prompt:', q2_prompt);
@@ -29,7 +29,7 @@ console.log('  ✓ Valid\n');
 const q3 = {
   sentence: '我的朋友很矮'
 };
-const q3_prompt = `Is this a natural-sounding sentence in Chinese: "${q3.sentence}"? If not, how would you rephrase it?`;
+const q3_prompt = `Does this sentence sound natural to native Chinese speakers: "${q3.sentence}"? If not, how would you rephrase it?`;
 console.log('Q3 Test:');
 console.log('  Input:', q3);
 console.log('  Prompt:', q3_prompt);
