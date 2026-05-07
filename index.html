@@ -10,18 +10,51 @@
   <div class="container">
     <header>
       <h1>Chinese Q&A</h1>
-      <p class="subtitle">Q1 only for now. Debug on right until API response stable.</p>
+      <p class="subtitle">Compact templates on left. Debug on right while we tune prompts and responses.</p>
     </header>
 
     <div class="app-shell">
       <main class="main-column">
         <div class="form-group">
-          <h2>What does this character mean?</h2>
-          <label for="q1-char">Character</label>
-          <input type="text" id="q1-char" placeholder="e.g., 很" maxlength="5" value="高">
-          <label for="q1-sentence">Sentence context</label>
-          <textarea id="q1-sentence" placeholder="e.g., 我的朋友很高">我的朋友很高</textarea>
+          <h2>Template 1</h2>
+          <label class="sr-only" for="q1-char">Character</label>
+          <label class="sr-only" for="q1-sentence">Sentence context</label>
+          <div class="template-line">
+            <span>What does</span>
+            <input class="slot-input slot-input-short" type="text" id="q1-char" placeholder="高" maxlength="5" value="高">
+            <span>mean in</span>
+            <input class="slot-input slot-input-long" type="text" id="q1-sentence" placeholder="我的朋友很高" value="我的朋友很高">
+            <span>?</span>
+          </div>
           <button id="q1-submit">Submit</button>
+        </div>
+
+        <div class="form-group">
+          <h2>Template 2</h2>
+          <label class="sr-only" for="q2-phrase-alt">Phrase you want to use</label>
+          <label class="sr-only" for="q2-phrase-correct">Correct phrase</label>
+          <label class="sr-only" for="q2-sentence-alt">Sentence context</label>
+          <div class="template-line">
+            <span>Why can't I use</span>
+            <input class="slot-input slot-input-short" type="text" id="q2-phrase-alt" placeholder="段" maxlength="8" value="段">
+            <span>instead of</span>
+            <input class="slot-input slot-input-short" type="text" id="q2-phrase-correct" placeholder="矮" maxlength="8" value="矮">
+            <span>in</span>
+            <input class="slot-input slot-input-long" type="text" id="q2-sentence-alt" placeholder="我的朋友很矮" value="我的朋友很矮">
+            <span>?</span>
+          </div>
+          <button id="q2-submit">Submit</button>
+        </div>
+
+        <div class="form-group">
+          <h2>Template 3</h2>
+          <label class="sr-only" for="q3-sentence">Sentence to check</label>
+          <div class="template-line">
+            <span>Is</span>
+            <input class="slot-input slot-input-long" type="text" id="q3-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
+            <span>natural?</span>
+          </div>
+          <button id="q3-submit">Submit</button>
         </div>
 
         <div id="response" class="response"></div>

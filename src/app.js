@@ -16,6 +16,14 @@ class ChineseQAApp {
       this.handleQuestion1();
     });
 
+    document.getElementById('q2-submit')?.addEventListener('click', () => {
+      this.handleQuestion2();
+    });
+
+    document.getElementById('q3-submit')?.addEventListener('click', () => {
+      this.handleQuestion3();
+    });
+
     document.getElementById('save-config')?.addEventListener('click', () => {
       this.saveConfig();
     });
@@ -64,6 +72,32 @@ class ChineseQAApp {
 
     const question = `What does the character "${char}" mean in this sentence: "${sentence}"?`;
     await this.submitQuery(question, 'Q1');
+  }
+
+  async handleQuestion2() {
+    const phrase1 = document.getElementById('q2-phrase-alt').value.trim();
+    const phrase2 = document.getElementById('q2-phrase-correct').value.trim();
+    const sentence = document.getElementById('q2-sentence-alt').value.trim();
+
+    if (!phrase1 || !phrase2 || !sentence) {
+      this.showResponse('Please fill in all fields', true);
+      return;
+    }
+
+    const question = `Why can't I use "${phrase1}" instead of "${phrase2}" in the sentence: "${sentence}"?`;
+    await this.submitQuery(question, 'Q2');
+  }
+
+  async handleQuestion3() {
+    const sentence = document.getElementById('q3-sentence').value.trim();
+
+    if (!sentence) {
+      this.showResponse('Please fill in the sentence', true);
+      return;
+    }
+
+    const question = `Is this a natural-sounding sentence in Chinese: "${sentence}"? If not, how would you rephrase it?`;
+    await this.submitQuery(question, 'Q3');
   }
 
   async submitQuery(question, source) {
