@@ -234,12 +234,29 @@ button:active {
   color: #1a8a7a;
 }
 
+.debug-wrap {
+  border: 1px solid #d8ece8;
+  border-radius: 4px;
+  background: #f7fbfb;
+}
+
+.debug-wrap summary {
+  cursor: pointer;
+  padding: 0.7rem 0.8rem;
+  color: #1a8a7a;
+  font-size: 0.86rem;
+  font-weight: 600;
+  user-select: none;
+}
+
+.debug-wrap[open] summary {
+  border-bottom: 1px solid #d8ece8;
+}
+
 .debug-panel {
   position: sticky;
   top: 1rem;
   padding: 0.8rem;
-  border: 1px solid #d8ece8;
-  border-radius: 4px;
   background: #f7fbfb;
 }
 

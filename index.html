@@ -10,7 +10,7 @@
   <div class="container">
     <header>
       <h1>Chinese Q&A</h1>
-      <p class="subtitle">Compact templates on left. Debug on right while we tune prompts and responses.</p>
+      <p class="subtitle">Compact templates with short word slots and wider sentence slots.</p>
     </header>
 
     <div class="app-shell">
@@ -69,25 +69,28 @@
       </main>
 
       <aside class="debug-column">
-        <div class="debug-panel">
-          <h3>Debug</h3>
-          <div class="debug-block">
-            <strong>Status</strong>
-            <pre id="debug-status">Idle</pre>
+        <details class="debug-wrap">
+          <summary>Show debug</summary>
+          <div class="debug-panel">
+            <h3>Debug</h3>
+            <div class="debug-block">
+              <strong>Status</strong>
+              <pre id="debug-status">Idle</pre>
+            </div>
+            <div class="debug-block">
+              <strong>Prompt</strong>
+              <pre id="debug-prompt">Waiting for submit...</pre>
+            </div>
+            <div class="debug-block">
+              <strong>Raw API</strong>
+              <pre id="debug-raw">No response yet.</pre>
+            </div>
+            <div class="debug-block">
+              <strong>Parsed</strong>
+              <pre id="debug-parsed">No parsed content yet.</pre>
+            </div>
           </div>
-          <div class="debug-block">
-            <strong>Prompt</strong>
-            <pre id="debug-prompt">Waiting for submit...</pre>
-          </div>
-          <div class="debug-block">
-            <strong>Raw API</strong>
-            <pre id="debug-raw">No response yet.</pre>
-          </div>
-          <div class="debug-block">
-            <strong>Parsed</strong>
-            <pre id="debug-parsed">No parsed content yet.</pre>
-          </div>
-        </div>
+        </details>
       </aside>
     </div>
   </div>
