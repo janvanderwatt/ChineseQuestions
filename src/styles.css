@@ -1,4 +1,4 @@
-/* App Styles */
+/* App Styles - Compact */
 * {
   margin: 0;
   padding: 0;
@@ -9,81 +9,83 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'SimHei', sans-serif;
   background: #ffffff;
   color: #000000;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .container {
-  max-width: 800px;
+  max-width: 700px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 header {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
 }
 
 h1 {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
+  font-size: 1.4rem;
+  margin-bottom: 0.2rem;
   color: #000;
 }
 
 .subtitle {
-  color: #666;
-  font-size: 0.9rem;
+  color: #999;
+  font-size: 0.8rem;
+  margin-bottom: 0.5rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
-  padding: 1.5rem;
+  margin-bottom: 0.8rem;
+  padding: 0.8rem;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #fafafa;
 }
 
 .form-group h2 {
-  font-size: 1.1rem;
-  margin-bottom: 1rem;
+  font-size: 0.95rem;
+  margin-bottom: 0.6rem;
   color: #1a8a7a;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   font-weight: 500;
   color: #333;
+  font-size: 0.85rem;
 }
 
 input, textarea {
   width: 100%;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
+  padding: 0.5rem;
+  margin-bottom: 0.6rem;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 3px;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.9rem;
 }
 
 textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 50px;
 }
 
 input:focus, textarea:focus {
   outline: none;
   border-color: #1a8a7a;
-  box-shadow: 0 0 0 3px rgba(26, 138, 122, 0.1);
+  box-shadow: 0 0 0 2px rgba(26, 138, 122, 0.1);
 }
 
 button {
   background: #1a8a7a;
   color: #fff;
-  padding: 0.75rem 1.5rem;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   transition: background 0.2s;
 }
@@ -97,11 +99,11 @@ button:active {
 }
 
 .response {
-  margin-top: 2rem;
-  padding: 1.5rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
   background: #f0faf8;
-  border-left: 4px solid #1a8a7a;
-  border-radius: 4px;
+  border-left: 3px solid #1a8a7a;
+  border-radius: 3px;
   display: none;
 }
 
@@ -111,12 +113,14 @@ button:active {
 
 .response h3 {
   color: #1a8a7a;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.95rem;
 }
 
 .response p {
   color: #333;
-  line-height: 1.8;
+  line-height: 1.5;
+  font-size: 0.9rem;
 }
 
 .error {
@@ -129,22 +133,38 @@ button:active {
   text-align: center;
   color: #1a8a7a;
   font-style: italic;
+  font-size: 0.9rem;
 }
 
 .config-section {
-  margin-top: 2rem;
-  padding: 1rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
   background: #f5f5f5;
-  border-radius: 4px;
+  border-radius: 3px;
+}
+
+.config-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }
 
 .config-section label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.3rem;
   color: #666;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
 }
 
 .config-section input {
-  margin-bottom: 0;
+  margin-bottom: 0.5rem;
+}
+
+.config-section p {
+  font-size: 0.75rem;
+  color: #999;
+  margin-top: 0.3rem;
+}
+
+.config-section a {
+  color: #1a8a7a;
 }
