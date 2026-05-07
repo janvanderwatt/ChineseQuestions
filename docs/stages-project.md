@@ -31,11 +31,16 @@
 - [x] Collapse two-column layout to single column (max 680px)
 - [x] Move debug `<details>` above config section
 - [x] Update Template 3 wording to "Does ... sound natural?"
+- [x] Improve response formatting (preserve AI line breaks)
+- [x] Reduce mobile vertical space in form layout
+- [x] Compact mobile template rows toward one-line layout (max two lines)
+- [x] Move single response area below active template and clear previous output on submit
 
 ## Stage 5: Source Control ✓
 - [x] Stage 1-4 commits
 - [x] Verify clean git status
 
-## Stage 6: Deployment Ready
-- [ ] Document SSH integration points
-- [ ] Prepare for web deployment
+## Stage 6: Deployment Ready ✓
+- [x] Document SSH integration points
+- [x] Prepare for web deployment
+- [x] Verify deploy script end-to-end (`py .\deploy.py`)

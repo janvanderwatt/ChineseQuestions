@@ -14,10 +14,13 @@
 - Modern fonts with Simplified Chinese support
 - Color: Medium-dark cyan accents, white background, black text
 - Responsive, single-column layout (max-width 680px)
+- Compact mobile behavior targeting one-line template rows where possible (max two lines when needed)
 - Short inline inputs for words/phrases (`slot-input-short`, max 4.5rem) and wider inline inputs for sentences (`slot-input-long`, flex)
 - Each template row is a flex line: label spans + inputs + **Ask** button, all inline — no per-template headings
 - Config input field for OpenRouter API key
 - Debug panel (`<details>`) placed above the config section, hidden by default behind a disclosure
+- Response panel should preserve line breaks from AI output for readable multi-line answers
+- Response panel is repositioned under the template being asked; previous response is cleared/hidden
 
 ## Tech Stack
 - Vanilla HTML/CSS/JS
@@ -30,5 +33,7 @@
 - Single page app, single column
 - Inline template rows stacked vertically (no section headings)
 - Response display area
+- Active response appears directly below the submitted template (single shared response area moved per submit)
+- Response body supports readable multi-line text formatting
 - Collapsible debug area (`<details>`) for request/response inspection
 - Settings/config area for API key (below debug)
