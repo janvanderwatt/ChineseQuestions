@@ -8,90 +8,75 @@
 </head>
 <body>
   <div class="container">
-    <header>
-      <h1>Chinese Q&A</h1>
-      <p class="subtitle">Compact templates with short word slots and wider sentence slots.</p>
-    </header>
+    <div class="form-group">
+      <label class="sr-only" for="q1-char">Character</label>
+      <label class="sr-only" for="q1-sentence">Sentence context</label>
+      <div class="template-line">
+        <span>What does</span>
+        <input class="slot-input slot-input-short" type="text" id="q1-char" placeholder="高" maxlength="5" value="高">
+        <span>mean in</span>
+        <input class="slot-input slot-input-long" type="text" id="q1-sentence" placeholder="我的朋友很高" value="我的朋友很高">
+        <span>?</span>
+        <button id="q1-submit">Ask</button>
+      </div>
+    </div>
 
-    <div class="app-shell">
-      <main class="main-column">
-        <div class="form-group">
-          <h2>Template 1</h2>
-          <label class="sr-only" for="q1-char">Character</label>
-          <label class="sr-only" for="q1-sentence">Sentence context</label>
-          <div class="template-line">
-            <span>What does</span>
-            <input class="slot-input slot-input-short" type="text" id="q1-char" placeholder="高" maxlength="5" value="高">
-            <span>mean in</span>
-            <input class="slot-input slot-input-long" type="text" id="q1-sentence" placeholder="我的朋友很高" value="我的朋友很高">
-            <span>?</span>
-          </div>
-          <button id="q1-submit">Submit</button>
+    <div class="form-group">
+      <label class="sr-only" for="q2-phrase-alt">Phrase you want to use</label>
+      <label class="sr-only" for="q2-phrase-correct">Correct phrase</label>
+      <label class="sr-only" for="q2-sentence-alt">Sentence context</label>
+      <div class="template-line">
+        <span>Why can't I use</span>
+        <input class="slot-input slot-input-short" type="text" id="q2-phrase-alt" placeholder="段" maxlength="8" value="段">
+        <span>instead of</span>
+        <input class="slot-input slot-input-short" type="text" id="q2-phrase-correct" placeholder="矮" maxlength="8" value="矮">
+        <span>in</span>
+        <input class="slot-input slot-input-long" type="text" id="q2-sentence-alt" placeholder="我的朋友很矮" value="我的朋友很矮">
+        <span>?</span>
+        <button id="q2-submit">Ask</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="sr-only" for="q3-sentence">Sentence to check</label>
+      <div class="template-line">
+        <span>Does</span>
+        <input class="slot-input slot-input-long" type="text" id="q3-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
+        <span>sound natural?</span>
+        <button id="q3-submit">Ask</button>
+      </div>
+    </div>
+
+    <div id="response" class="response"></div>
+
+    <details class="debug-wrap">
+      <summary>Show debug</summary>
+      <div class="debug-panel">
+        <div class="debug-block">
+          <strong>Status</strong>
+          <pre id="debug-status">Idle</pre>
         </div>
-
-        <div class="form-group">
-          <h2>Template 2</h2>
-          <label class="sr-only" for="q2-phrase-alt">Phrase you want to use</label>
-          <label class="sr-only" for="q2-phrase-correct">Correct phrase</label>
-          <label class="sr-only" for="q2-sentence-alt">Sentence context</label>
-          <div class="template-line">
-            <span>Why can't I use</span>
-            <input class="slot-input slot-input-short" type="text" id="q2-phrase-alt" placeholder="段" maxlength="8" value="段">
-            <span>instead of</span>
-            <input class="slot-input slot-input-short" type="text" id="q2-phrase-correct" placeholder="矮" maxlength="8" value="矮">
-            <span>in</span>
-            <input class="slot-input slot-input-long" type="text" id="q2-sentence-alt" placeholder="我的朋友很矮" value="我的朋友很矮">
-            <span>?</span>
-          </div>
-          <button id="q2-submit">Submit</button>
+        <div class="debug-block">
+          <strong>Prompt</strong>
+          <pre id="debug-prompt">Waiting for submit...</pre>
         </div>
-
-        <div class="form-group">
-          <h2>Template 3</h2>
-          <label class="sr-only" for="q3-sentence">Sentence to check</label>
-          <div class="template-line">
-            <span>Is</span>
-            <input class="slot-input slot-input-long" type="text" id="q3-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
-            <span>natural?</span>
-          </div>
-          <button id="q3-submit">Submit</button>
+        <div class="debug-block">
+          <strong>Raw API</strong>
+          <pre id="debug-raw">No response yet.</pre>
         </div>
-
-        <div id="response" class="response"></div>
-
-        <div class="config-section">
-          <h3>Configuration</h3>
-          <label for="api-key">OpenRouter API Key</label>
-          <input type="password" id="api-key" placeholder="sk-or-...">
-          <button id="save-config">Save Config</button>
-          <p>Key stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank" rel="noreferrer">openrouter.ai</a></p>
+        <div class="debug-block">
+          <strong>Parsed</strong>
+          <pre id="debug-parsed">No parsed content yet.</pre>
         </div>
-      </main>
+      </div>
+    </details>
 
-      <aside class="debug-column">
-        <details class="debug-wrap">
-          <summary>Show debug</summary>
-          <div class="debug-panel">
-            <h3>Debug</h3>
-            <div class="debug-block">
-              <strong>Status</strong>
-              <pre id="debug-status">Idle</pre>
-            </div>
-            <div class="debug-block">
-              <strong>Prompt</strong>
-              <pre id="debug-prompt">Waiting for submit...</pre>
-            </div>
-            <div class="debug-block">
-              <strong>Raw API</strong>
-              <pre id="debug-raw">No response yet.</pre>
-            </div>
-            <div class="debug-block">
-              <strong>Parsed</strong>
-              <pre id="debug-parsed">No parsed content yet.</pre>
-            </div>
-          </div>
-        </details>
-      </aside>
+    <div class="config-section">
+      <h3>Configuration</h3>
+      <label for="api-key">OpenRouter API Key</label>
+      <input type="password" id="api-key" placeholder="sk-or-...">
+      <button id="save-config">Save Config</button>
+      <p>Key stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank" rel="noreferrer">openrouter.ai</a></p>
     </div>
   </div>
 

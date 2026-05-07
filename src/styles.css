@@ -13,21 +13,9 @@ body {
 }
 
 .container {
-  max-width: 1180px;
+  max-width: 680px;
   margin: 0 auto;
   padding: 1rem;
-}
-
-.app-shell {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
-  gap: 1rem;
-  align-items: start;
-}
-
-.main-column,
-.debug-column {
-  min-width: 0;
 }
 
 header {
@@ -53,12 +41,6 @@ h1 {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   background: #fafafa;
-}
-
-.form-group h2 {
-  font-size: 0.95rem;
-  margin-bottom: 0.6rem;
-  color: #1a8a7a;
 }
 
 .form-group label {
@@ -235,6 +217,7 @@ button:active {
 }
 
 .debug-wrap {
+  margin-bottom: 0.8rem;
   border: 1px solid #d8ece8;
   border-radius: 4px;
   background: #f7fbfb;
@@ -242,7 +225,7 @@ button:active {
 
 .debug-wrap summary {
   cursor: pointer;
-  padding: 0.7rem 0.8rem;
+  padding: 0.6rem 0.8rem;
   color: #1a8a7a;
   font-size: 0.86rem;
   font-weight: 600;
@@ -254,8 +237,6 @@ button:active {
 }
 
 .debug-panel {
-  position: sticky;
-  top: 1rem;
   padding: 0.8rem;
   background: #f7fbfb;
 }
@@ -291,14 +272,6 @@ button:active {
 }
 
 @media (max-width: 860px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-  }
-
-  .debug-panel {
-    position: static;
-  }
-
   .template-line {
     align-items: stretch;
   }

@@ -25,6 +25,12 @@
 - [x] Verify Chinese font rendering
 - [x] Check color scheme
 - [x] Manual local testing complete
+- [x] Remove per-template h2 headings
+- [x] Move Ask button inline into each template-line row
+- [x] Rename Submit → Ask
+- [x] Collapse two-column layout to single column (max 680px)
+- [x] Move debug `<details>` above config section
+- [x] Update Template 3 wording to "Does ... sound natural?"
 
 ## Stage 5: Source Control ✓
 - [x] Stage 1-4 commits

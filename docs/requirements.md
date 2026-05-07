@@ -7,8 +7,8 @@
 Examples:
   - What does character [ 很 ] mean in this sentence [ 我的朋友很高 ] ?
   - Why can't I use [ 段 ] instead of [ 矮 ] in this sentence [ 我的朋友很矮 ] ?
-  - Is this a natural sounding sentence [ 我的朋友很矮 ] ?
-- Each template has a "SUBMIT" button
+  - Does [ 我的朋友很矮 ] sound natural?
+- Each template has an inline "Ask" button (no separate heading per template)
 - On submit, pass a relevant query to an AI with some prompting to answer the user's question.
 - Prompt the AI to explain in English with simple examples if possible. Don't be too verbose or theoretical.
 - I like modern fonts that are Simplified Chinese-capable
