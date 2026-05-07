@@ -48,9 +48,21 @@ class ChineseQAAPI {
       }
 
       const data = await response.json();
-      return data.choices[0].message.content;
+      
+      // Validate response structure
+      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+        console.error('Invalid API response:', data);
+        throw new Error('Invalid response structure from API');
+      }
+      
+      const content = data.choices[0].message.content;
+      if (!content) {
+        throw new Error('Empty response from API');
+      }
+      
+      return content;
     } catch (err) {
-      throw new Error(`Failed to query API: ${err.message}`);
+      throw new Error(`API failed: ${err.message}`);
     }
   }
 

@@ -98,7 +98,7 @@ class ChineseQAApp {
 
   async submitQuery(question, source) {
     if (!this.api) {
-      this.showResponse('API key not configured. Please set it in the config section.', true);
+      this.showResponse('⚠️ API key not configured. Scroll to Config section → enter OpenRouter key → Save', true);
       return;
     }
 
@@ -108,12 +108,16 @@ class ChineseQAApp {
       const response = await this.api.query(question);
       this.showResponse(response, false);
     } catch (err) {
+      console.error('Query error:', err);
       this.showResponse(`Error: ${err.message}`, true);
     }
   }
 
   showResponse(text, isError = false) {
     const respDiv = document.getElementById('response');
+    if (!text || typeof text !== 'string') {
+      text = 'Unknown error occurred';
+    }
     respDiv.innerHTML = `<h3>${isError ? '⚠️ Error' : '✓ Response'}</h3><p>${this.escapeHtml(text)}</p>`;
     respDiv.classList.toggle('error', isError);
     respDiv.classList.toggle('loading', text === 'Loading...');
@@ -121,6 +125,9 @@ class ChineseQAApp {
   }
 
   escapeHtml(text) {
+    if (!text || typeof text !== 'string') {
+      return '';
+    }
     const map = {
       '&': '&amp;',
       '<': '&lt;',
