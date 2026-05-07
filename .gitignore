@@ -1,3 +1,4 @@
 config.js
+api/gateway-config.php
 node_modules/
 .DS_Store

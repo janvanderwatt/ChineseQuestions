@@ -241,6 +241,42 @@ button:active {
   border-radius: 3px;
 }
 
+.config-wrap {
+  margin-top: 1rem;
+}
+
+.config-wrap summary {
+  position: relative;
+  padding-right: 10.5rem;
+}
+
+.config-key-indicator {
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-block;
+  padding: 0.16rem 0.42rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+.config-key-indicator.is-valid {
+  background: #e5f5f1;
+  color: #146659;
+}
+
+.config-key-indicator.is-missing {
+  background: #f0f0f0;
+  color: #666;
+}
+
+.config-wrap .config-section {
+  margin-top: 0;
+}
+
 .config-section h3 {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;

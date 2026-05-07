@@ -71,13 +71,18 @@
       </div>
     </details>
 
-    <div class="config-section">
-      <h3>Configuration</h3>
-      <label for="api-key">OpenRouter API Key</label>
-      <input type="password" id="api-key" placeholder="sk-or-...">
-      <button id="save-config">Save Config</button>
-      <p>Key stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank" rel="noreferrer">openrouter.ai</a></p>
-    </div>
+    <details class="debug-wrap config-wrap">
+      <summary>
+        <span>Configuration</span>
+        <span id="config-key-indicator" class="config-key-indicator is-missing">No key stored</span>
+      </summary>
+      <div class="config-section">
+        <label for="api-key">OpenRouter API Key</label>
+        <input type="password" id="api-key" placeholder="sk-or-...">
+        <button id="save-config">Validate + Save Key</button>
+        <p>Key is validated once before local save. The saved key is never re-populated into this input. Leave empty and save to use the server PHP gateway.</p>
+      </div>
+    </details>
   </div>
 
   <script src="src/api.js"></script>

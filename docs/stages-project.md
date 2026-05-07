@@ -35,6 +35,11 @@
 - [x] Reduce mobile vertical space in form layout
 - [x] Compact mobile template rows toward one-line layout (max two lines)
 - [x] Move single response area below active template and clear previous output on submit
+- [x] Remove browser default API key and add PHP gateway fallback when no local key exists
+- [x] Store local API key with timestamp and erase legacy key records missing timestamp on startup
+- [x] Implement `api/openrouter-gateway.php` server endpoint and gateway config template
+- [x] Make config section collapsible by default
+- [x] Validate local key before save and show stored/verified indicator in config header
 
 ## Stage 5: Source Control ✓
 - [x] Stage 1-4 commits

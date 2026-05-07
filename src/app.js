@@ -3,6 +3,8 @@
 class ChineseQAApp {
   constructor() {
     this.api = null;
+    this.storageKey = 'apiKey';
+    this.storageKeySavedAt = 'apiKeySavedAt';
     this.init();
   }
 
@@ -24,41 +26,146 @@ class ChineseQAApp {
       this.handleQuestion3();
     });
 
-    document.getElementById('save-config')?.addEventListener('click', () => {
-      this.saveConfig();
+    document.getElementById('save-config')?.addEventListener('click', async () => {
+      await this.saveConfig();
     });
   }
 
   loadConfig() {
-    const saved = localStorage.getItem('apiKey');
-    const configured = window.CONFIG?.OPENROUTER_API_KEY;
-    const hasConfiguredKey = configured && configured !== 'your-api-key-here' && configured !== 'sk-or-...your-key-here...';
-    const key = saved || (hasConfiguredKey ? configured : '');
+    const input = document.getElementById('api-key');
+    if (input) {
+      input.value = '';
+    }
 
-    if (!key) {
-      this.updateDebug('status', 'No API key loaded yet.');
+    const key = localStorage.getItem(this.storageKey);
+    const savedAt = localStorage.getItem(this.storageKeySavedAt);
+
+    if (key && !savedAt) {
+      localStorage.removeItem(this.storageKey);
+      this.updateDebug('status', 'Removed old local API key without timestamp. Using server gateway.');
+      this.initAPI('');
+      this.updateConfigIndicator(false);
       return;
     }
 
-    document.getElementById('api-key').value = key;
-    this.initAPI(key);
-  }
-
-  saveConfig() {
-    const key = document.getElementById('api-key').value.trim();
-    if (!key) {
-      alert('API key cannot be empty');
+    if (key && savedAt && Number.isNaN(Date.parse(savedAt))) {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem(this.storageKeySavedAt);
+      this.updateDebug('status', 'Removed local API key with invalid timestamp. Using server gateway.');
+      this.initAPI('');
+      this.updateConfigIndicator(false);
       return;
     }
-    localStorage.setItem('apiKey', key);
+
+    if (!key) {
+      this.updateDebug('status', 'No local API key found. Using server gateway.');
+      this.initAPI('');
+      this.updateConfigIndicator(false);
+      return;
+    }
+
     this.initAPI(key);
-    alert('Config saved');
+    this.updateConfigIndicator(true, savedAt || '');
+    this.updateDebug('status', `Local API key loaded (saved ${savedAt}). Direct mode ready.`);
   }
 
-  initAPI(key) {
-    window.CONFIG.OPENROUTER_API_KEY = key;
+  async saveConfig() {
+    const input = document.getElementById('api-key');
+    if (!input) {
+      return;
+    }
+
+    const key = input.value.trim();
+    if (!key) {
+      localStorage.removeItem(this.storageKey);
+      localStorage.removeItem(this.storageKeySavedAt);
+      this.initAPI('');
+      this.updateConfigIndicator(false);
+      this.updateDebug('status', 'Local API key cleared. Using server gateway.');
+      alert('Local API key cleared. App will use server gateway.');
+      return;
+    }
+
+    this.setConfigBusy(true, 'Validating API key...');
+    const isValid = await this.validateApiKey(key);
+    if (!isValid) {
+      this.setConfigBusy(false);
+      this.updateDebug('status', 'API key validation failed. Key not saved.');
+      alert('API key validation failed. Please check the key and try again.');
+      return;
+    }
+
+    const savedAt = new Date().toISOString();
+    localStorage.setItem(this.storageKey, key);
+    localStorage.setItem(this.storageKeySavedAt, savedAt);
+    this.initAPI(key);
+    this.updateConfigIndicator(true, savedAt);
+    input.value = '';
+    this.setConfigBusy(false);
+    alert(`Local API key saved (${savedAt}).`);
+  }
+
+  async validateApiKey(key) {
+    const baseUrl = window.CONFIG?.API_BASE || 'https://openrouter.ai/api/v1';
+
+    try {
+      const response = await fetch(`${baseUrl}/models`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${key}`
+        }
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      return Array.isArray(data?.data);
+    } catch (_error) {
+      return false;
+    }
+  }
+
+  setConfigBusy(isBusy, label = 'Validate + Save Key') {
+    const saveButton = document.getElementById('save-config');
+    const keyInput = document.getElementById('api-key');
+
+    if (saveButton) {
+      saveButton.disabled = isBusy;
+      saveButton.textContent = isBusy ? label : 'Validate + Save Key';
+    }
+
+    if (keyInput) {
+      keyInput.disabled = isBusy;
+    }
+  }
+
+  updateConfigIndicator(hasKey, savedAt = '') {
+    const indicator = document.getElementById('config-key-indicator');
+    if (!indicator) {
+      return;
+    }
+
+    indicator.classList.remove('is-valid', 'is-missing');
+    if (hasKey) {
+      indicator.classList.add('is-valid');
+      indicator.textContent = savedAt ? 'Key stored and verified' : 'Key stored';
+      return;
+    }
+
+    indicator.classList.add('is-missing');
+    indicator.textContent = 'No key stored';
+  }
+
+  initAPI(key = '') {
     this.api = new ChineseQAAPI(key);
-    this.updateDebug('status', 'API key loaded. Ready.');
+    const mode = this.api.getMode();
+    if (mode === 'direct') {
+      this.updateDebug('status', 'Using local API key. Direct OpenRouter mode ready.');
+      return;
+    }
+    this.updateDebug('status', 'Using server gateway mode (no local key).');
   }
 
   async handleQuestion1() {
@@ -102,12 +209,12 @@ class ChineseQAApp {
 
   async submitQuery(question, source) {
     if (!this.api) {
-      this.showResponse('⚠️ API key not configured. Scroll to Config section → enter OpenRouter key → Save', true, source);
-      this.updateDebug('status', 'Blocked: missing API key.');
-      return;
+      this.initAPI('');
     }
 
-    this.updateDebug('status', `Submitting ${source}...`);
+    const mode = this.api.getMode();
+
+    this.updateDebug('status', `Submitting ${source} via ${mode} mode...`);
     this.updateDebug('prompt', question);
     this.updateDebug('raw', 'Waiting for API response...');
     this.updateDebug('parsed', 'Waiting for parsed content...');
@@ -115,7 +222,7 @@ class ChineseQAApp {
 
     try {
       const result = await this.api.query(question);
-      this.updateDebug('status', `${source} complete.`);
+      this.updateDebug('status', `${source} complete via ${result.mode || mode}.`);
       this.updateDebug('raw', result.raw);
       this.updateDebug('parsed', result.content);
       this.showResponse(result.content, false, source);

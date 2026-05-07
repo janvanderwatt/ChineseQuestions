@@ -4,16 +4,26 @@
 window.CONFIG = window.CONFIG || {
   OPENROUTER_API_KEY: '',
   OPENROUTER_MODEL: 'openrouter/auto',
-  API_BASE: 'https://openrouter.ai/api/v1'
+  API_BASE: 'https://openrouter.ai/api/v1',
+  GATEWAY_URL: '/api/openrouter-gateway.php'
 };
 
 class ChineseQAAPI {
-  constructor(apiKey) {
+  constructor(apiKey = '') {
     this.apiKey = apiKey;
     this.baseUrl = window.CONFIG.API_BASE;
+    this.gatewayUrl = window.CONFIG.GATEWAY_URL || '/api/openrouter-gateway.php';
     this.model = window.CONFIG.OPENROUTER_MODEL === 'openrouter/auto'
       ? 'openai/gpt-4.1-mini'
       : window.CONFIG.OPENROUTER_MODEL;
+  }
+
+  setApiKey(apiKey = '') {
+    this.apiKey = apiKey;
+  }
+
+  getMode() {
+    return this.apiKey ? 'direct' : 'gateway';
   }
 
   async query(question, context = '') {
@@ -33,35 +43,26 @@ class ChineseQAAPI {
       temperature: 0.7,
       max_tokens: 700
     };
-    
+
+    const useDirect = Boolean(this.apiKey);
+
     try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify(requestBody)
-      });
+      const data = useDirect
+        ? await this.queryDirect(requestBody)
+        : await this.queryViaGateway(requestBody, prompt);
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        const apiMessage = data?.error?.message || data?.message || `API error: ${response.status}`;
-        throw new Error(apiMessage);
-      }
-      
       const content = this.extractContent(data);
       if (!content) {
         const emptyError = new Error('Empty response from API');
         emptyError.raw = data;
         throw emptyError;
       }
-      
+
       return {
         content,
         prompt,
         requestBody,
+        mode: useDirect ? 'direct' : 'gateway',
         raw: data
       };
     } catch (err) {
@@ -71,6 +72,62 @@ class ChineseQAAPI {
       }
       throw wrappedError;
     }
+  }
+
+  async queryDirect(requestBody) {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      const apiMessage = data?.error?.message || data?.message || `API error: ${response.status}`;
+      throw new Error(apiMessage);
+    }
+
+    return data;
+  }
+
+  async queryViaGateway(requestBody, prompt) {
+    const response = await fetch(this.gatewayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        model: requestBody.model,
+        requestBody
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      const apiMessage = data?.error?.message || data?.message || `Gateway error: ${response.status}`;
+      throw new Error(apiMessage);
+    }
+
+    // Gateway may return either OpenRouter-like shape or { content: "..." }.
+    if (typeof data?.content === 'string' && data.content.trim()) {
+      return {
+        choices: [
+          {
+            message: {
+              content: data.content.trim()
+            }
+          }
+        ],
+        gateway: true,
+        raw: data
+      };
+    }
+
+    return data;
   }
 
   extractContent(data) {

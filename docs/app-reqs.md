@@ -9,6 +9,10 @@
 - Each template has an inline **Ask** button (no separate heading per template)
 - Responses from AI (OpenRouter) in English, simple + practical
 - Templates are prefilled with sample Chinese inputs for local testing
+- API routing behavior:
+  - If a local API key is saved, call OpenRouter directly from browser.
+  - If no local API key is saved, call a server-side PHP gateway that injects API key and proxies result.
+- On startup, if a locally stored API key exists without a saved date/time, erase it automatically.
 
 ## UI/UX
 - Modern fonts with Simplified Chinese support
@@ -18,6 +22,11 @@
 - Short inline inputs for words/phrases (`slot-input-short`, max 4.5rem) and wider inline inputs for sentences (`slot-input-long`, flex)
 - Each template row is a flex line: label spans + inputs + **Ask** button, all inline — no per-template headings
 - Config input field for OpenRouter API key
+- Local API key save operation stores key + ISO date/time stamp.
+- Config panel is collapsible and closed by default.
+- Saving a local API key must first validate the key once; only valid keys are persisted.
+- API key input field must stay empty on load (saved key is not re-populated into UI input).
+- Config header shows top-right indicator when a local key is stored and verified.
 - Debug panel (`<details>`) placed above the config section, hidden by default behind a disclosure
 - Response panel should preserve line breaks from AI output for readable multi-line answers
 - Response panel is repositioned under the template being asked; previous response is cleared/hidden
@@ -25,6 +34,7 @@
 ## Tech Stack
 - Vanilla HTML/CSS/JS
 - OpenRouter API for AI responses
+- PHP gateway endpoint on server for key-safe proxy mode
 - Local config (config.js)
 - Desktop testing on Win 11
 - Future: Deploy to web via SSH

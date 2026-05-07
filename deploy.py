@@ -45,7 +45,7 @@ def run_cmd(command: list[str], cwd: Path | None = None, dry_run: bool = False) 
 def get_deploy_items(project_dir: Path, include_config: bool) -> list[Path]:
     """Resolve and validate files/folders that should be deployed."""
 
-    items: list[Path] = [project_dir / "index.html", project_dir / "src"]
+    items: list[Path] = [project_dir / "index.html", project_dir / "src", project_dir / "api"]
     if include_config:
         items.append(project_dir / "config.js")
 
