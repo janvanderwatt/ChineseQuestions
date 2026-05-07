@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Q&A</title>
+  <link rel="stylesheet" href="src/styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Chinese Language Q&A</h1>
+      <p class="subtitle">Ask questions about Chinese phrases and characters</p>
+    </header>
+
+    <!-- Question 1: Character Meaning -->
+    <div class="form-group">
+      <h2>❓ What does this character mean?</h2>
+      <label for="q1-char">Character</label>
+      <input type="text" id="q1-char" placeholder="e.g., 很" maxlength="5">
+      
+      <label for="q1-sentence">Sentence context</label>
+      <textarea id="q1-sentence" placeholder="e.g., 我的朋友很高"></textarea>
+      
+      <button id="q1-submit">Submit</button>
+    </div>
+
+    <!-- Question 2: Phrase Alternative -->
+    <div class="form-group">
+      <h2>❓ Why can't I use this phrase?</h2>
+      <label for="q2-phrase-alt">Phrase you want to use</label>
+      <input type="text" id="q2-phrase-alt" placeholder="e.g., 段">
+      
+      <label for="q2-phrase-correct">Correct phrase in sentence</label>
+      <input type="text" id="q2-phrase-correct" placeholder="e.g., 矮">
+      
+      <label for="q2-sentence-alt">Full sentence</label>
+      <textarea id="q2-sentence-alt" placeholder="e.g., 我的朋友很矮"></textarea>
+      
+      <button id="q2-submit">Submit</button>
+    </div>
+
+    <!-- Question 3: Naturalness Check -->
+    <div class="form-group">
+      <h2>❓ Is this sentence natural?</h2>
+      <label for="q3-sentence">Your sentence</label>
+      <textarea id="q3-sentence" placeholder="Enter the sentence you want to check"></textarea>
+      
+      <button id="q3-submit">Submit</button>
+    </div>
+
+    <!-- Response Area -->
+    <div id="response" class="response"></div>
+
+    <!-- Config Section -->
+    <div class="config-section">
+      <h3>⚙️ Configuration</h3>
+      <label for="api-key">OpenRouter API Key</label>
+      <input type="password" id="api-key" placeholder="sk-or-...">
+      <button id="save-config">Save Config</button>
+      <p style="font-size: 0.85rem; color: #999; margin-top: 0.5rem;">
+        Key is stored in browser local storage. Get one at <a href="https://openrouter.ai" target="_blank">openrouter.ai</a>
+      </p>
+    </div>
+  </div>
+
+  <script src="config.example.js"></script>
+  <script src="src/api.js"></script>
+  <script src="src/app.js"></script>
+</body>
+</html>
