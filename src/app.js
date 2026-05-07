@@ -82,16 +82,22 @@ class ChineseQAApp {
       this.initAPI('');
       this.updateConfigIndicator(false);
       this.updateDebug('status', 'Local API key cleared. Using server gateway.');
-      alert('Local API key cleared. App will use server gateway.');
+      this.showConfigMessage('Local key cleared. Using server gateway.', 'success');
+      return;
+    }
+
+    if (!this.isLikelyOpenRouterKey(key)) {
+      this.updateDebug('status', 'API key format rejected before validation call.');
+      this.showConfigMessage('Key format invalid. Expected format: sk-or-v1-...', 'error');
       return;
     }
 
     this.setConfigBusy(true, 'Validating API key...');
-    const isValid = await this.validateApiKey(key);
-    if (!isValid) {
+    const validation = await this.validateApiKey(key);
+    if (!validation.ok) {
       this.setConfigBusy(false);
-      this.updateDebug('status', 'API key validation failed. Key not saved.');
-      alert('API key validation failed. Please check the key and try again.');
+      this.updateDebug('status', `API key validation failed. Key not saved. ${validation.message}`);
+      this.showConfigMessage(`Validation failed: ${validation.message}`, 'error');
       return;
     }
 
@@ -102,29 +108,97 @@ class ChineseQAApp {
     this.updateConfigIndicator(true, savedAt);
     input.value = '';
     this.setConfigBusy(false);
-    alert(`Local API key saved (${savedAt}).`);
+    this.showConfigMessage('API key validated and saved locally.', 'success');
   }
 
   async validateApiKey(key) {
     const baseUrl = window.CONFIG?.API_BASE || 'https://openrouter.ai/api/v1';
+    const model = 'openrouter/auto';
+    const probeBody = {
+      model,
+      messages: [
+        {
+          role: 'user',
+          content: 'This is a validation prompt. All you have to reply is YES. Nothing else.'
+        }
+      ],
+      max_tokens: 8,
+      temperature: 0
+    };
+
+    const fetchOptions = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify(probeBody)
+    };
 
     try {
-      const response = await fetch(`${baseUrl}/models`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${key}`
-        }
-      });
+      let response = await fetch(`${baseUrl}/chat/completions`, fetchOptions);
+      let data = await response.json().catch(() => ({}));
 
+      // Retry once for transient upstream/provider issues.
       if (!response.ok) {
-        return false;
+        const firstMessage = data?.error?.message || data?.message || `HTTP ${response.status}`;
+        const transientProviderIssue = /provider returned error|upstream|timeout|temporar|overloaded/i.test(firstMessage);
+        if (transientProviderIssue) {
+          response = await fetch(`${baseUrl}/chat/completions`, fetchOptions);
+          data = await response.json().catch(() => ({}));
+        }
       }
 
-      const data = await response.json();
-      return Array.isArray(data?.data);
+      if (response.ok) {
+        const content = data?.choices?.[0]?.message?.content;
+        if (typeof content !== 'string' || !content.trim()) {
+          return { ok: false, message: 'No content returned from validation call' };
+        }
+
+        if (!/\bYES\b/i.test(content)) {
+          return { ok: false, message: 'Validation probe did not return YES' };
+        }
+
+        return { ok: true, message: 'Valid key' };
+      }
+
+      const message = data?.error?.message || data?.message || `HTTP ${response.status}`;
+      const providerIssue = /provider returned error|upstream|timeout|temporar|overloaded/i.test(message);
+
+      // If provider is failing but auth is valid, allow saving instead of false-negative rejection.
+      if (providerIssue) {
+        const authResponse = await fetch(`${baseUrl}/models`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${key}`
+          }
+        });
+
+        if (authResponse.ok) {
+          const modelData = await authResponse.json().catch(() => ({}));
+          if (Array.isArray(modelData?.data)) {
+            return { ok: true, message: 'Valid key (provider had a temporary error during probe)' };
+          }
+        }
+      }
+
+      return { ok: false, message };
     } catch (_error) {
+      return { ok: false, message: 'Network/CORS error during validation' };
+    }
+  }
+
+  isLikelyOpenRouterKey(key) {
+    // Basic hardening: enforce expected prefix/charset and reasonable length.
+    if (typeof key !== 'string') {
       return false;
     }
+
+    if (key.length < 20 || key.length > 256) {
+      return false;
+    }
+
+    return /^sk-or-v1-[A-Za-z0-9_-]+$/.test(key);
   }
 
   setConfigBusy(isBusy, label = 'Validate + Save Key') {
@@ -156,6 +230,27 @@ class ChineseQAApp {
 
     indicator.classList.add('is-missing');
     indicator.textContent = 'No key stored';
+  }
+
+  showConfigMessage(message, type = 'success') {
+    const container = document.getElementById('config-messages');
+    if (!container) {
+      return;
+    }
+
+    const pill = document.createElement('div');
+    pill.classList.add('config-pill');
+    pill.classList.add(type === 'error' ? 'config-pill-error' : 'config-pill-success');
+    pill.textContent = message;
+    container.prepend(pill);
+
+    setTimeout(() => {
+      pill.classList.add('fade');
+    }, 10000);
+
+    setTimeout(() => {
+      pill.remove();
+    }, 10550);
   }
 
   initAPI(key = '') {

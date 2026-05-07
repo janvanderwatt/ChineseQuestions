@@ -277,6 +277,42 @@ button:active {
   margin-top: 0;
 }
 
+.config-messages {
+  margin-top: 0.45rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.config-pill {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 0.26rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+
+.config-pill-success {
+  background: #e5f5f1;
+  color: #146659;
+}
+
+.config-pill-error {
+  background: #ffe6e6;
+  color: #b42323;
+}
+
+.config-pill.fade {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
 .config-section h3 {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;

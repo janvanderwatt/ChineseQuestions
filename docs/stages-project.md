@@ -49,3 +49,9 @@
 - [x] Document SSH integration points
 - [x] Prepare for web deployment
 - [x] Verify deploy script end-to-end (`py .\deploy.py`)
+
+## Future Hardening Notes
+- [ ] Add gateway request size limits
+- [ ] Add requestBody allowlist validation in PHP gateway
+- [ ] Add gateway origin/shared-secret check
+- [ ] Add simple per-IP rate limiting for gateway endpoint
