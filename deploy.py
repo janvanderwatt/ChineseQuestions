@@ -13,6 +13,7 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -57,6 +58,28 @@ def get_deploy_items(project_dir: Path, include_config: bool) -> list[Path]:
     return items
 
 
+def build_index_with_asset_versions(project_dir: Path, include_config: bool) -> str:
+    """Return index.html content with CSS/JS URLs stamped by local file mtime."""
+
+    index_path = project_dir / "index.html"
+    content = index_path.read_text(encoding="utf-8")
+
+    asset_paths = ["src/styles.css", "src/api.js", "src/app.js"]
+    if include_config:
+                asset_paths.append("config.js")
+
+    for rel_path in asset_paths:
+        asset = project_dir / rel_path
+        if not asset.exists():
+            continue
+
+        version = int(asset.stat().st_mtime)
+        content = content.replace(f'href="{rel_path}"', f'href="{rel_path}?v={version}"')
+        content = content.replace(f'src="{rel_path}"', f'src="{rel_path}?v={version}"')
+
+    return content
+
+
 def deploy(
     host_alias: str,
     remote_dir: str,
@@ -83,6 +106,16 @@ def deploy(
         raise DeployError(f"Project directory not found: {project_dir}")
 
     deploy_items = get_deploy_items(project_dir, include_config)
+
+    temp_dir: tempfile.TemporaryDirectory[str] | None = None
+    versioned_index_path: Path | None = None
+    if (project_dir / "index.html").exists():
+        temp_dir = tempfile.TemporaryDirectory()
+        versioned_index_path = Path(temp_dir.name) / "index.html"
+        versioned_index_path.write_text(
+            build_index_with_asset_versions(project_dir, include_config),
+            encoding="utf-8",
+        )
     print("Deploying items:")
     for item in deploy_items:
         print(f"- {item}")
@@ -114,10 +147,15 @@ def deploy(
 
     remote_target = f"{host_alias}:{remote_dir.rstrip('/')}/"
     for item in deploy_items:
+        source_item = versioned_index_path if versioned_index_path and item.name == "index.html" else item
+
         if item.is_dir():
             run_cmd([scp_exec, "-r", str(item), remote_target], dry_run=dry_run)
             continue
-        run_cmd([scp_exec, str(item), remote_target], dry_run=dry_run)
+        run_cmd([scp_exec, str(source_item), remote_target], dry_run=dry_run)
+
+    if temp_dir:
+        temp_dir.cleanup()
 
     print("Deploy complete.")
 

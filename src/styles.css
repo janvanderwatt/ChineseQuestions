@@ -10,6 +10,8 @@ body {
   background: #ffffff;
   color: #000000;
   line-height: 1.4;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 .container {
@@ -56,6 +58,10 @@ h1 {
   border: none;
   border-radius: 8px;
   background: transparent;
+}
+
+.form-group.is-active {
+  border-radius: 9px;
 }
 
 .form-group label {
@@ -110,7 +116,9 @@ textarea {
 .form-group.is-active .template-line {
   border-bottom-left-radius: 0;
   border-bottom-right-radius: 0;
-  border-bottom-color: #cfe7e2;
+  border-color: #146659;
+  border-bottom-color: transparent;
+  border-width: 2px;
   background: #fdfefe;
 }
 
@@ -247,6 +255,12 @@ button:active {
   border-top: none;
   border-radius: 0 0 8px 8px;
   display: none;
+}
+
+.form-group.is-active .response {
+  border-color: #146659;
+  border-width: 2px;
+  border-top: none;
 }
 
 .response.show {
@@ -489,7 +503,7 @@ button:active {
     align-items: center;
     gap: 0.22rem;
     padding: 0.42rem 0.48rem;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0;
     font-size: 0.84rem;
   }
 
@@ -522,11 +536,20 @@ button:active {
   }
 
   .form-group {
-    padding: 0.5rem;
+    padding: 0;
     margin-bottom: 0.5rem;
   }
 
   .response {
     padding: 0.6rem;
+  }
+
+  .response h3 {
+    font-size: 0.86rem;
+  }
+
+  .response-body,
+  .response p {
+    font-size: 0.84rem;
   }
 }
