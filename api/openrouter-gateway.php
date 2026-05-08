@@ -78,6 +78,7 @@ if (!$requestBody) {
 
 $payload = json_encode($requestBody);
 if ($payload === false) {
+    header('Content-Type: application/json; charset=utf-8');
     http_response_code(400);
     echo json_encode(['error' => ['message' => 'Invalid request payload']]);
     exit;
@@ -85,24 +86,88 @@ if ($payload === false) {
 
 $ch = curl_init($apiBase . '/chat/completions');
 if ($ch === false) {
+    header('Content-Type: application/json; charset=utf-8');
     http_response_code(500);
     echo json_encode(['error' => ['message' => 'Failed to initialize cURL']]);
     exit;
 }
 
+$streamRequested = isset($requestBody['stream']) && $requestBody['stream'] === true;
+$upstreamStatusCode = 0;
+$streamedErrorBody = '';
+
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
-    CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER => [
         'Content-Type: application/json',
         'Authorization: Bearer ' . $apiKey,
     ],
     CURLOPT_POSTFIELDS => $payload,
     CURLOPT_TIMEOUT => 60,
+    CURLOPT_HEADERFUNCTION => static function ($ch, string $headerLine) use (&$upstreamStatusCode): int {
+        if (preg_match('/^HTTP\/\S+\s+(\d{3})/i', trim($headerLine), $match) === 1) {
+            $upstreamStatusCode = (int) $match[1];
+        }
+        return strlen($headerLine);
+    },
 ]);
 
+if ($streamRequested) {
+    header('Content-Type: text/event-stream; charset=utf-8');
+    header('Cache-Control: no-cache, no-transform');
+    header('Connection: keep-alive');
+    header('X-Accel-Buffering: no');
+
+    while (ob_get_level() > 0) {
+        ob_end_flush();
+    }
+
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+    curl_setopt($ch, CURLOPT_WRITEFUNCTION, static function ($ch, string $chunk) use (&$upstreamStatusCode, &$streamedErrorBody): int {
+        if ($upstreamStatusCode >= 400) {
+            $streamedErrorBody .= $chunk;
+            return strlen($chunk);
+        }
+
+        echo $chunk;
+        if (function_exists('ob_flush')) {
+            @ob_flush();
+        }
+        flush();
+        return strlen($chunk);
+    });
+
+    $streamExecResult = curl_exec($ch);
+    $statusCode = $upstreamStatusCode > 0 ? $upstreamStatusCode : curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
+    curl_close($ch);
+
+    if ($streamExecResult === false) {
+        echo "data: " . json_encode(['error' => ['message' => 'Gateway request failed: ' . $curlError]]) . "\n\n";
+        flush();
+        exit;
+    }
+
+    if ($statusCode >= 400) {
+        $errorPayload = ['error' => ['message' => 'Upstream streaming request failed']];
+        $decoded = json_decode($streamedErrorBody, true);
+        if (is_array($decoded)) {
+            $errorPayload = $decoded;
+        }
+        echo "data: " . json_encode($errorPayload) . "\n\n";
+        echo "data: [DONE]\n\n";
+        flush();
+        exit;
+    }
+
+    exit;
+}
+
+header('Content-Type: application/json; charset=utf-8');
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
 $responseBody = curl_exec($ch);
-$statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+$statusCode = $upstreamStatusCode > 0 ? $upstreamStatusCode : curl_getinfo($ch, CURLINFO_HTTP_CODE);
 $curlError = curl_error($ch);
 curl_close($ch);
 

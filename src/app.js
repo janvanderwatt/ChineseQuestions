@@ -313,12 +313,21 @@ class ChineseQAApp {
     this.updateDebug('prompt', question);
     this.updateDebug('roles', 'Waiting for request payload...');
     this.updateDebug('context', context || '(empty)');
-    this.updateDebug('raw', 'Waiting for API response...');
+    this.updateDebug('raw', 'Waiting for API stream...');
     this.updateDebug('parsed', 'Waiting for parsed content...');
     this.showResponse('Loading...', false, source);
 
     try {
-      const result = await this.api.query(question, context);
+      let sawToken = false;
+      const result = await this.api.query(question, context, {
+        onToken: (_token, fullText) => {
+          sawToken = true;
+          this.updateDebug('status', `Streaming ${source} via ${mode} mode...`);
+          this.updateDebug('parsed', fullText || '');
+          this.showResponse(fullText || 'Loading...', false, source);
+        }
+      });
+
       const rolesSent = Array.isArray(result?.requestBody?.messages)
         ? result.requestBody.messages.map(m => m?.role || '(missing role)')
         : [];
@@ -328,7 +337,9 @@ class ChineseQAApp {
       this.updateDebug('context', context || '(empty)');
       this.updateDebug('raw', result.raw);
       this.updateDebug('parsed', result.content);
-      this.showResponse(result.content, false, source);
+      if (!sawToken || !result.content) {
+        this.showResponse(result.content, false, source);
+      }
     } catch (err) {
       console.error('Query error:', err);
       this.updateDebug('status', 'Request failed.');

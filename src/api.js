@@ -26,7 +26,8 @@ class ChineseQAAPI {
     return this.apiKey ? 'direct' : 'gateway';
   }
 
-  async query(question, context = '') {
+  async query(question, context = '', options = {}) {
+    const { onToken } = options;
     const prompt = this._buildPrompt(question, context);
     const requestBody = {
       model: this.model,
@@ -57,15 +58,20 @@ class ChineseQAAPI {
         }
       ],
       temperature: 0.3,
-      max_tokens: 700
+      max_tokens: 700,
+      stream: Boolean(onToken)
     };
 
     const useDirect = Boolean(this.apiKey);
 
     try {
-      const data = useDirect
-        ? await this.queryDirect(requestBody)
-        : await this.queryViaGateway(requestBody, prompt);
+      const data = onToken
+        ? (useDirect
+          ? await this.queryDirectStream(requestBody, onToken)
+          : await this.queryViaGatewayStream(requestBody, prompt, onToken))
+        : (useDirect
+          ? await this.queryDirect(requestBody)
+          : await this.queryViaGateway(requestBody, prompt));
 
       const content = this.extractContent(data);
       if (!content) {
@@ -91,13 +97,16 @@ class ChineseQAAPI {
   }
 
   async queryDirect(requestBody) {
+    const body = { ...requestBody };
+    delete body.stream;
+
     const response = await fetch(`${this.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${this.apiKey}`
       },
-      body: JSON.stringify(requestBody)
+      body: JSON.stringify(body)
     });
 
     const data = await response.json();
@@ -109,7 +118,23 @@ class ChineseQAAPI {
     return data;
   }
 
+  async queryDirectStream(requestBody, onToken) {
+    const response = await fetch(`${this.baseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${this.apiKey}`
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    return this.consumeStreamingResponse(response, onToken, 'API');
+  }
+
   async queryViaGateway(requestBody, prompt) {
+    const body = { ...requestBody };
+    delete body.stream;
+
     const response = await fetch(this.gatewayUrl, {
       method: 'POST',
       headers: {
@@ -118,7 +143,7 @@ class ChineseQAAPI {
       body: JSON.stringify({
         prompt,
         model: requestBody.model,
-        requestBody
+        requestBody: body
       })
     });
 
@@ -144,6 +169,131 @@ class ChineseQAAPI {
     }
 
     return data;
+  }
+
+  async queryViaGatewayStream(requestBody, prompt, onToken) {
+    const response = await fetch(this.gatewayUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt,
+        model: requestBody.model,
+        requestBody
+      })
+    });
+
+    return this.consumeStreamingResponse(response, onToken, 'Gateway');
+  }
+
+  async consumeStreamingResponse(response, onToken, sourceLabel) {
+    if (!response.ok) {
+      let errorMessage = `${sourceLabel} error: ${response.status}`;
+      try {
+        const data = await response.json();
+        errorMessage = data?.error?.message || data?.message || errorMessage;
+      } catch (_error) {
+        const text = await response.text().catch(() => '');
+        if (text.trim()) {
+          errorMessage = text.trim();
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (!response.body) {
+      throw new Error('Streaming not supported by this browser');
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const rawEvents = [];
+    let content = '';
+    let buffer = '';
+
+    const applyEvent = parsed => {
+      if (!parsed || typeof parsed !== 'object') {
+        return;
+      }
+
+      rawEvents.push(parsed);
+      const errorMessage = parsed?.error?.message || parsed?.message;
+      if (typeof errorMessage === 'string' && errorMessage.trim()) {
+        const streamError = new Error(errorMessage.trim());
+        streamError.raw = parsed;
+        throw streamError;
+      }
+
+      const delta = parsed?.choices?.[0]?.delta?.content;
+      if (typeof delta === 'string' && delta.length > 0) {
+        content += delta;
+        if (typeof onToken === 'function') {
+          onToken(delta, content, parsed);
+        }
+        return;
+      }
+
+      const messageContent = parsed?.choices?.[0]?.message?.content;
+      if (typeof messageContent === 'string' && messageContent.length > 0 && content.length === 0) {
+        content = messageContent;
+        if (typeof onToken === 'function') {
+          onToken(messageContent, content, parsed);
+        }
+      }
+    };
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data:')) {
+          continue;
+        }
+
+        const dataPart = trimmed.slice(5).trim();
+        if (!dataPart || dataPart === '[DONE]') {
+          continue;
+        }
+
+        let parsed = null;
+        try {
+          parsed = JSON.parse(dataPart);
+        } catch (error) {
+          // Ignore malformed chunks and continue consuming stream.
+          continue;
+        }
+
+        applyEvent(parsed);
+      }
+    }
+
+    if (buffer.trim().startsWith('data:')) {
+      const dataPart = buffer.trim().slice(5).trim();
+      if (dataPart && dataPart !== '[DONE]') {
+        applyEvent(JSON.parse(dataPart));
+      }
+    }
+
+    return {
+      choices: [
+        {
+          message: {
+            content
+          }
+        }
+      ],
+      stream: true,
+      raw: rawEvents
+    };
   }
 
   extractContent(data) {
