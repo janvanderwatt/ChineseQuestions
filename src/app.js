@@ -374,6 +374,15 @@ class ChineseQAApp {
     }
 
     const targetGroup = this.getFormGroupForSource(source);
+
+    document.querySelectorAll('.form-group.is-active').forEach(group => {
+      group.classList.remove('is-active');
+    });
+
+    if (targetGroup) {
+      targetGroup.classList.add('is-active');
+    }
+
     if (targetGroup && respDiv.parentElement !== targetGroup) {
       targetGroup.appendChild(respDiv);
     }
