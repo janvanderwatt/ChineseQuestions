@@ -5,6 +5,10 @@ class ChineseQAApp {
     this.api = null;
     this.storageKey = 'apiKey';
     this.storageKeySavedAt = 'apiKeySavedAt';
+    const debugEnabled = Boolean(window.CONFIG?.ENABLE_DEBUG_PANEL);
+    this.debug = window.AppDebug
+      ? new window.AppDebug({ enabled: debugEnabled })
+      : { update: () => {}, setEnabled: () => {} };
     this.init();
   }
 
@@ -581,21 +585,7 @@ class ChineseQAApp {
   }
 
   updateDebug(section, value) {
-    const target = document.getElementById(`debug-${section}`);
-    if (!target) {
-      return;
-    }
-
-    if (typeof value === 'string') {
-      target.textContent = value;
-      return;
-    }
-
-    try {
-      target.textContent = JSON.stringify(value, null, 2);
-    } catch (_error) {
-      target.textContent = String(value);
-    }
+    this.debug.update(section, value);
   }
 }
 

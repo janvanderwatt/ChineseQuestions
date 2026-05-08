@@ -64,7 +64,7 @@ def build_index_with_asset_versions(project_dir: Path, include_config: bool) -> 
     index_path = project_dir / "index.html"
     content = index_path.read_text(encoding="utf-8")
 
-    asset_paths = ["src/styles.css", "src/api.js", "src/app.js"]
+    asset_paths = ["src/styles.css", "src/api.js", "src/debug.js", "src/app.js"]
     if include_config:
                 asset_paths.append("config.js")
 
