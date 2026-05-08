@@ -10,7 +10,76 @@ class ChineseQAApp {
 
   init() {
     this.setupEventListeners();
+    this.initClearButtons();
     this.loadConfig();
+  }
+
+  initClearButtons() {
+    const inputs = document.querySelectorAll('input[type="text"], input[type="password"]');
+
+    inputs.forEach(input => {
+      if (input.dataset.clearEnabled === 'true') {
+        return;
+      }
+
+      input.dataset.clearEnabled = 'true';
+
+      const wrapper = document.createElement('div');
+      wrapper.classList.add('input-clear-wrap');
+
+      if (input.classList.contains('slot-input-short')) {
+        wrapper.classList.add('slot-input-short-wrap');
+      }
+
+      if (input.classList.contains('slot-input-long')) {
+        wrapper.classList.add('slot-input-long-wrap');
+      }
+
+      if (!input.classList.contains('slot-input')) {
+        wrapper.classList.add('full-width');
+      }
+
+      const parent = input.parentElement;
+      if (!parent) {
+        return;
+      }
+
+      parent.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+
+      const clearButton = document.createElement('button');
+      clearButton.type = 'button';
+      clearButton.className = 'clear-input-btn';
+      clearButton.setAttribute('aria-label', 'Clear text');
+      clearButton.setAttribute('title', 'Clear');
+      clearButton.textContent = '×';
+      wrapper.appendChild(clearButton);
+
+      const syncClearState = () => {
+        wrapper.classList.toggle('has-value', Boolean(input.value));
+      };
+
+      input.addEventListener('input', syncClearState);
+      input.addEventListener('focus', syncClearState);
+      input.addEventListener('blur', syncClearState);
+
+      input.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') {
+          return;
+        }
+
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      clearButton.addEventListener('click', () => {
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.focus();
+      });
+
+      syncClearState();
+    });
   }
 
   setupEventListeners() {

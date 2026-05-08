@@ -131,6 +131,73 @@ textarea {
   line-height: 1.2;
 }
 
+.input-clear-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.input-clear-wrap.full-width {
+  display: block;
+  width: 100%;
+}
+
+.input-clear-wrap .slot-input {
+  width: 100%;
+  padding-right: 1.45rem;
+}
+
+.input-clear-wrap .slot-input-long {
+  flex: initial;
+  min-width: 0;
+}
+
+.input-clear-wrap.slot-input-short-wrap {
+  width: 4.5rem;
+  min-width: 4.5rem;
+}
+
+.input-clear-wrap.slot-input-long-wrap {
+  flex: 1 1 18rem;
+  min-width: 14rem;
+}
+
+.input-clear-wrap.full-width input {
+  width: 100%;
+  margin-bottom: 0;
+  padding-right: 1.9rem;
+}
+
+.clear-input-btn {
+  position: absolute;
+  right: 0.32rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.1rem;
+  height: 1.1rem;
+  border: none;
+  border-radius: 999px;
+  padding: 0;
+  margin: 0;
+  background: #dbeceb;
+  color: #235650;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+}
+
+.clear-input-btn:hover {
+  background: #cfe3e0;
+}
+
+.input-clear-wrap.has-value .clear-input-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .slot-input:focus {
   box-shadow: none;
   background: #edf8f6;
@@ -435,6 +502,11 @@ button:active {
     width: 3.35rem;
     min-width: 3.35rem;
     text-align: center;
+  }
+
+  .input-clear-wrap.slot-input-short-wrap {
+    width: 3.35rem;
+    min-width: 3.35rem;
   }
 
   .slot-input-long {
