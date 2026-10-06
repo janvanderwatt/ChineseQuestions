@@ -95,6 +95,10 @@ class ChineseQAApp {
         input.value = '';
         input.dispatchEvent(new Event('input', { bubbles: true }));
         input.focus();
+        // Keep the clear button visible briefly so the user sees feedback
+        // before the has-value class is removed by syncClearState.
+        wrapper.classList.add('has-value');
+        setTimeout(() => syncClearState(), 300);
       });
 
       syncClearState();
@@ -317,6 +321,10 @@ class ChineseQAApp {
       input.value = '';
       syncClearState();
       close();
+      // Keep the clear button visible briefly so the user sees feedback
+      // before the has-value class is removed by syncClearState.
+      root.classList.add('has-value');
+      setTimeout(() => syncClearState(), 300);
       // Focus returns to the field, but must not reopen the list on an
       // empty input -- that read as the clear not having worked.
       skipNextFocusOpen = true;
