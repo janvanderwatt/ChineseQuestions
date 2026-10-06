@@ -133,34 +133,101 @@ textarea {
   line-height: 1.2;
 }
 
-/* Tone field: a free-text input backed by <datalist>, so the suggested
-   adjectives are offered without blocking anything else the user types.
-   Fixed width keeps the row on one line; it does not grow with the value. */
-/* Tone field: free text with suggestions offered via <datalist>.
-   The shared clear button sits exactly where Chrome draws the datalist's own
-   dropdown indicator, so it swallowed every click on the arrow and the list
-   could only be opened from the keyboard. The indicator is therefore drawn
-   here instead, offset to the left of the clear button, and the padding
-   reserves room for both. */
-.input-clear-wrap.slot-input-tone-wrap {
+/* Tone field: an editable combobox (W3C ARIA APG, "editable combobox with
+   list autocomplete"). It owns its own toggle and clear buttons, so it opts
+   out of the shared .input-clear-wrap wrapper. Fixed width keeps the template
+   row on one line and does not grow with the value. */
+.combobox {
+  position: relative;
   flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
   width: 10.5rem;
   min-width: 7rem;
 }
 
-.input-clear-wrap .slot-input-tone {
+.combobox .slot-input-tone {
   width: 100%;
   min-width: 0;
-  /* Chevron, drawn rather than borrowed from the native widget. */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231a8a7a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1.55rem center;
-  background-size: 10px 6px;
+  /* Room for the clear button and the toggle, which overlap this edge. */
+  padding-right: 3.1rem;
 }
 
-/* Keep the arrow clear of the text so a long value does not collide with it. */
-.input-clear-wrap .slot-input-tone:focus {
-  background-color: #edf8f6;
+.combobox-toggle {
+  position: absolute;
+  right: 1.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #1a8a7a;
+  cursor: pointer;
+}
+
+.combobox-toggle:hover {
+  background: #dbeceb;
+}
+
+.combobox-toggle:focus-visible {
+  outline: 2px solid #146659;
+  outline-offset: 1px;
+}
+
+/* The clear button is shared with the other inputs, repositioned to sit
+   inside this combobox rather than to the right of it. The show/hide rule
+   for it is scoped to .input-clear-wrap.has-value, which this markup does
+   not have, so the combobox needs its own equivalent. */
+.combobox .combobox-clear {
+  right: 0.28rem;
+  z-index: 1;
+  display: none;
+}
+
+.combobox.has-value .combobox-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.combobox-list {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  /* Tall enough for every suggestion, so the list never scrolls and no row
+     is cut off. Sized for the current set; scroll is the fallback if more
+     are added later. */
+  max-height: 20rem;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #146659;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgba(20, 60, 56, 0.18);
+}
+
+.combobox-option {
+  padding: 0.3rem 0.55rem;
+  color: #234440;
+  font-size: 0.86rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.combobox-option.is-active {
+  background: #e5f5f1;
+  color: #124c44;
+  font-weight: 600;
 }
 
 .input-clear-wrap {
@@ -184,13 +251,6 @@ textarea {
   width: 100%;
   min-width: 0;
   padding-right: 1.45rem;
-}
-
-/* Sits after the shared rule above so it wins on source order at equal
-   specificity -- the tone field needs room for a chevron AND a clear button,
-   where every other field only has to make space for the clear button. */
-.input-clear-wrap .slot-input-tone {
-  padding-right: 2.9rem;
 }
 
 .input-clear-wrap.slot-input-short-wrap {

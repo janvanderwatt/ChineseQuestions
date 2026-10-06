@@ -30,6 +30,13 @@ class ChineseQAApp {
         return;
       }
 
+      // Opted out by the markup (the Q4 combobox renders its own clear
+      // button, because it also needs a toggle and a listbox popup).
+      if (input.dataset.clearEnabled === 'own') {
+        input.dataset.clearEnabled = 'true';
+        return;
+      }
+
       input.dataset.clearEnabled = 'true';
 
       const wrapper = document.createElement('div');
@@ -94,37 +101,226 @@ class ChineseQAApp {
     });
   }
 
-  // The tone field draws its own chevron (see .slot-input-tone in styles.css)
-  // because the shared clear button covers the native datalist indicator. A
-  // drawn arrow has to do the opening itself, otherwise it is just decoration:
-  // clicking it focuses the input and dispatches the ArrowDown that Chrome
-  // reads as "show suggestions". Choosing an item fills the input, so the
-  // field still accepts anything typed by hand.
+  // Editable combobox with list autocomplete, per the W3C ARIA Authoring
+  // Practices example (combobox-autocomplete-list). Replaces the <datalist>,
+  // which filters options against the current value -- so a field already
+  // holding "respectful" offered that single option and nothing else.
+  //
+  // Keyboard model, per the same reference: DOM focus stays on the input and
+  // aria-activedescendant tracks the visually highlighted option.
+  //   ArrowDown/ArrowUp  move the highlight, wrapping at both ends
+  //   Enter              accept the highlighted option, else close
+  //   Escape             close the list; if already closed, clear the field
+  //   Alt+ArrowDown      open without moving the highlight
   setupToneSuggestions() {
-    const tone = document.getElementById('q4-tone');
-    const wrap = tone?.closest('.input-clear-wrap');
-    if (!tone || !wrap) {
+    const input = document.getElementById('q4-tone');
+    const root = document.getElementById('q4-tone-combobox');
+    const listbox = document.getElementById('q4-tone-listbox');
+    const toggle = document.getElementById('q4-tone-toggle');
+    const clearBtn = document.getElementById('q4-tone-clear');
+
+    if (!input || !root || !listbox || !toggle || !clearBtn) {
       return;
     }
 
-    const openSuggestions = () => {
-      tone.focus();
-      tone.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'ArrowDown',
-        code: 'ArrowDown',
-        keyCode: 40,
-        which: 40,
-        bubbles: true
-      }));
+    const tones = (input.dataset.tones || '')
+      .split('|')
+      .map(tone => tone.trim())
+      .filter(Boolean);
+
+    let options = [];
+    let activeIndex = -1;
+    let isOpen = false;
+
+    const setExpanded = expanded => {
+      isOpen = expanded;
+      input.setAttribute('aria-expanded', String(expanded));
+      toggle.setAttribute('aria-expanded', String(expanded));
+      listbox.hidden = !expanded;
     };
 
-    wrap.addEventListener('click', event => {
-      // Ignore clicks on the clear button itself; it handles its own action.
-      if (event.target.closest('.clear-input-btn')) {
+    const setActive = nextIndex => {
+      if (!options.length) {
         return;
       }
-      openSuggestions();
+
+      // Wrap at both ends, so the highlight never gets stranded.
+      activeIndex = (nextIndex + options.length) % options.length;
+      const active = options[activeIndex];
+      input.setAttribute('aria-activedescendant', active.id);
+
+      options.forEach((option, index) => {
+        const selected = index === activeIndex;
+        option.setAttribute('aria-selected', String(selected));
+        option.classList.toggle('is-active', selected);
+      });
+
+      // aria-activedescendant targets are not focused by the browser, so the
+      // highlighted row has to be scrolled into view explicitly.
+      active.scrollIntoView({ block: 'nearest' });
+    };
+
+    const clearActive = () => {
+      activeIndex = -1;
+      input.removeAttribute('aria-activedescendant');
+      options.forEach(option => {
+        option.setAttribute('aria-selected', 'false');
+        option.classList.remove('is-active');
+      });
+    };
+
+    const render = () => {
+      const query = input.value.trim().toLowerCase();
+
+      // An empty field offers everything. A field holding an exact suggestion
+      // should still offer the others, otherwise clicking the arrow appears to
+      // do nothing -- the case the datalist made impossible.
+      const isExactMatch = tones.some(tone => tone.toLowerCase() === query);
+
+      // Match the start of any word, not just of the whole label. Several
+      // suggestions are prefixed ("more formal"), so matching only the label
+      // start meant typing "fo" or "casual" returned nothing at all.
+      const matches = query === '' || isExactMatch
+        ? tones.slice()
+        : tones.filter(tone => tone
+          .toLowerCase()
+          .split(/[\s/]+/)
+          .some(word => word.startsWith(query)));
+
+      listbox.replaceChildren(...matches.map((tone, index) => {
+        const item = document.createElement('li');
+        item.id = `q4-tone-option-${index}`;
+        item.className = 'combobox-option';
+        item.setAttribute('role', 'option');
+        item.setAttribute('aria-selected', 'false');
+        item.textContent = tone;
+        return item;
+      }));
+
+      options = Array.from(listbox.children);
+      activeIndex = -1;
+      return matches.length > 0;
+    };
+
+    const open = ({ moveHighlight = false } = {}) => {
+      const hasOptions = render();
+      setExpanded(true);
+      if (hasOptions && moveHighlight) {
+        setActive(0);
+      } else {
+        clearActive();
+      }
+    };
+
+    const close = () => {
+      setExpanded(false);
+      clearActive();
+    };
+
+    const commit = option => {
+      input.value = option.textContent;
+      root.classList.add('has-value');
+      close();
+      input.focus();
+    };
+
+    const syncClearState = () => {
+      root.classList.toggle('has-value', Boolean(input.value));
+    };
+
+    toggle.addEventListener('click', () => {
+      if (isOpen) {
+        close();
+        return;
+      }
+      input.focus();
+      open();
     });
+
+    input.addEventListener('input', () => {
+      syncClearState();
+      open();
+    });
+
+    input.addEventListener('focus', () => {
+      // Show the suggestions when tabbing in, as the APG example does.
+      open();
+    });
+
+    input.addEventListener('keydown', event => {
+      const { key, altKey } = event;
+
+      if (key === 'ArrowDown') {
+        event.preventDefault();
+        if (altKey) {
+          open();
+          return;
+        }
+        if (!isOpen) {
+          open({ moveHighlight: true });
+          return;
+        }
+        setActive(activeIndex + 1);
+        return;
+      }
+
+      if (key === 'ArrowUp') {
+        event.preventDefault();
+        if (!isOpen) {
+          open({ moveHighlight: true });
+          return;
+        }
+        // From an unhighlighted state, ArrowUp lands on the last option.
+        setActive(activeIndex <= 0 ? options.length - 1 : activeIndex - 1);
+        return;
+      }
+
+      if (key === 'Enter') {
+        if (isOpen && activeIndex >= 0 && options[activeIndex]) {
+          event.preventDefault();
+          commit(options[activeIndex]);
+        } else if (isOpen) {
+          close();
+        }
+        return;
+      }
+
+      if (key === 'Escape') {
+        event.preventDefault();
+        if (isOpen) {
+          close();
+          return;
+        }
+        // Already closed: Escape clears, matching the other inputs.
+        input.value = '';
+        syncClearState();
+      }
+    });
+
+    // Pointer selection uses mousedown so it fires before the input's blur.
+    listbox.addEventListener('mousedown', event => {
+      const option = event.target.closest('.combobox-option');
+      if (option) {
+        event.preventDefault();
+        commit(option);
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      syncClearState();
+      close();
+      input.focus();
+    });
+
+    document.addEventListener('click', event => {
+      if (isOpen && !root.contains(event.target)) {
+        close();
+      }
+    });
+
+    setExpanded(false);
+    syncClearState();
   }
 
   setupEventListeners() {

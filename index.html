@@ -58,20 +58,39 @@
         <span>How else can I say</span>
         <input class="slot-input slot-input-long" type="text" id="q4-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
         <span>to sound</span>
-        <input class="slot-input slot-input-tone" type="text" id="q4-tone" list="q4-tone-options"
-               placeholder="friendlier" value="respectful" maxlength="40"
-               autocomplete="off" spellcheck="false">
-        <datalist id="q4-tone-options">
-          <option value="friendlier"></option>
-          <option value="more casual / informal"></option>
-          <option value="more formal"></option>
-          <option value="angrier"></option>
-          <option value="respectful"></option>
-          <option value="sarcastic"></option>
-          <option value="childish"></option>
-          <option value="shy"></option>
-          <option value="excited"></option>
-        </datalist>
+        <!-- W3C APG "editable combobox with list autocomplete": a real listbox
+             popup rather than <datalist>, which filters to the current value and
+             so offered nothing when the field already held "respectful".
+             data-clear-enabled opts this input out of the shared clear-button
+             wrapper (initClearButtons) so it can own both of its own buttons. -->
+        <div class="combobox" id="q4-tone-combobox">
+          <input class="slot-input slot-input-tone" type="text" id="q4-tone"
+                 role="combobox"
+                 aria-autocomplete="list"
+                 aria-expanded="false"
+                 aria-controls="q4-tone-listbox"
+                 aria-haspopup="listbox"
+                 autocomplete="off"
+                 spellcheck="false"
+                 placeholder="friendlier"
+                 value="respectful"
+                 maxlength="40"
+                 data-clear-enabled="own"
+                 data-tones="friendlier|more casual / informal|more formal|less formal|angrier|respectful|sarcastic|childish|shy|excited">
+          <button type="button" class="combobox-toggle" id="q4-tone-toggle" tabindex="-1"
+                  aria-label="Show tone suggestions"
+                  aria-controls="q4-tone-listbox"
+                  aria-expanded="false">
+            <svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true" focusable="false">
+              <path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"
+                    stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+          <button type="button" class="clear-input-btn combobox-clear" id="q4-tone-clear"
+                  aria-label="Clear tone" title="Clear">&times;</button>
+          <ul class="combobox-list" id="q4-tone-listbox" role="listbox"
+              aria-label="Tone suggestions" hidden></ul>
+        </div>
         <button id="q4-submit">Ask</button>
       </div>
     </div>
