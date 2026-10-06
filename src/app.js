@@ -263,7 +263,11 @@ class ChineseQAApp {
 
     input.addEventListener('input', () => {
       syncClearStateGuarded();
-      open();
+      // Only open if the user is actively typing (focused), not when
+      // the value is set programmatically (e.g., restoring a saved value).
+      if (document.activeElement === input) {
+        open();
+      }
     });
 
     input.addEventListener('focus', () => {
