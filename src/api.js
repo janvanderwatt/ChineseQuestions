@@ -3,19 +3,47 @@
 // Fallback config if config.js is missing.
 window.CONFIG = window.CONFIG || {
   OPENROUTER_API_KEY: '',
-  OPENROUTER_MODEL: 'openrouter/auto',
+  OPENROUTER_MODEL: 'google/gemma-4-26b-a4b-it:free',
+  OPENROUTER_MODEL_FALLBACKS: ['nvidia/nemotron-3-super-120b-a12b:free'],
   API_BASE: 'https://openrouter.ai/api/v1',
   GATEWAY_URL: '/api/openrouter-gateway.php'
 };
+
+// Used only when config.js supplies no usable model list.
+const BUILTIN_DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
+const BUILTIN_DEFAULT_FALLBACKS = ['nvidia/nemotron-3-super-120b-a12b:free'];
+
+// Failures worth retrying on the next model: transient upstream/provider
+// errors, rate limits, and empty replies. Empty replies matter because
+// reasoning models can spend the whole max_tokens budget on internal
+// reasoning and return content: null.
+const RETRYABLE_PATTERN = /provider returned error|upstream|timeout|temporar|overloaded|rate.?limit|\b429\b|\b500\b|\b502\b|\b503\b|empty response/i;
 
 class ChineseQAAPI {
   constructor(apiKey = '') {
     this.apiKey = apiKey;
     this.baseUrl = window.CONFIG.API_BASE;
     this.gatewayUrl = window.CONFIG.GATEWAY_URL || '/api/openrouter-gateway.php';
-    this.model = window.CONFIG.OPENROUTER_MODEL === 'openrouter/auto'
-      ? 'openai/gpt-4.1-mini'
-      : window.CONFIG.OPENROUTER_MODEL;
+    this.models = this._resolveModels();
+  }
+
+  // Build the ordered model list: configured primary first, then any
+  // configured fallbacks. Unlike the previous version this does NOT rewrite
+  // 'openrouter/auto' into a paid model -- whatever is configured is used
+  // verbatim, so the no-key path never silently spends credits.
+  _resolveModels() {
+    const clean = value => (typeof value === 'string' ? value.trim() : '');
+
+    const primary = clean(window.CONFIG.OPENROUTER_MODEL) || BUILTIN_DEFAULT_MODEL;
+    const configuredFallbacks = Array.isArray(window.CONFIG.OPENROUTER_MODEL_FALLBACKS)
+      ? window.CONFIG.OPENROUTER_MODEL_FALLBACKS
+      : BUILTIN_DEFAULT_FALLBACKS;
+
+    const models = [primary, ...configuredFallbacks]
+      .map(clean)
+      .filter((model, index, all) => model && all.indexOf(model) === index);
+
+    return models.length > 0 ? models : [BUILTIN_DEFAULT_MODEL];
   }
 
   setApiKey(apiKey = '') {
@@ -29,8 +57,91 @@ class ChineseQAAPI {
   async query(question, context = '', options = {}) {
     const { onToken } = options;
     const prompt = this._buildPrompt(question, context);
-    const requestBody = {
-      model: this.model,
+    const useDirect = Boolean(this.apiKey);
+
+    const attempts = [];
+    let lastError = null;
+
+    for (let index = 0; index < this.models.length; index += 1) {
+      const model = this.models[index];
+      const isLastModel = index === this.models.length - 1;
+      const requestBody = this._buildRequestBody(model, prompt, Boolean(onToken));
+
+      // Track whether this attempt already streamed text to the caller.
+      // Retrying after partial output would duplicate tokens on screen.
+      let streamedAnyToken = false;
+      const attemptOnToken = onToken
+        ? (token, fullText, rawEvent) => {
+            streamedAnyToken = true;
+            onToken(token, fullText, rawEvent);
+          }
+        : undefined;
+
+      try {
+        const data = attemptOnToken
+          ? (useDirect
+            ? await this.queryDirectStream(requestBody, attemptOnToken)
+            : await this.queryViaGatewayStream(requestBody, prompt, attemptOnToken))
+          : (useDirect
+            ? await this.queryDirect(requestBody)
+            : await this.queryViaGateway(requestBody, prompt));
+
+        const content = this.extractContent(data);
+        if (!content) {
+          const emptyError = new Error('Empty response from API');
+          emptyError.raw = data;
+          throw emptyError;
+        }
+
+        return {
+          content,
+          prompt,
+          requestBody,
+          model,
+          mode: useDirect ? 'direct' : 'gateway',
+          attempts,
+          raw: data
+        };
+      } catch (err) {
+        const detail = {
+          model,
+          message: err.message,
+          retrying: false
+        };
+
+        const canFallBack = !isLastModel
+          && !streamedAnyToken
+          && RETRYABLE_PATTERN.test(err.message);
+
+        if (canFallBack) {
+          detail.retrying = true;
+        }
+
+        attempts.push(detail);
+        lastError = err;
+
+        if (!canFallBack) {
+          const wrappedError = new Error(`API failed: ${err.message}`);
+          if (err.raw) {
+            wrappedError.raw = err.raw;
+          }
+          wrappedError.attempts = attempts;
+          throw wrappedError;
+        }
+      }
+    }
+
+    const wrappedError = new Error(`API failed: ${lastError?.message || 'No model available'}`);
+    if (lastError?.raw) {
+      wrappedError.raw = lastError.raw;
+    }
+    wrappedError.attempts = attempts;
+    throw wrappedError;
+  }
+
+  _buildRequestBody(model, prompt, stream) {
+    return {
+      model,
       messages: [
         {
           role: 'system',
@@ -60,41 +171,8 @@ class ChineseQAAPI {
       ],
       temperature: 0.3,
       max_tokens: 700,
-      stream: Boolean(onToken)
+      stream
     };
-
-    const useDirect = Boolean(this.apiKey);
-
-    try {
-      const data = onToken
-        ? (useDirect
-          ? await this.queryDirectStream(requestBody, onToken)
-          : await this.queryViaGatewayStream(requestBody, prompt, onToken))
-        : (useDirect
-          ? await this.queryDirect(requestBody)
-          : await this.queryViaGateway(requestBody, prompt));
-
-      const content = this.extractContent(data);
-      if (!content) {
-        const emptyError = new Error('Empty response from API');
-        emptyError.raw = data;
-        throw emptyError;
-      }
-
-      return {
-        content,
-        prompt,
-        requestBody,
-        mode: useDirect ? 'direct' : 'gateway',
-        raw: data
-      };
-    } catch (err) {
-      const wrappedError = new Error(`API failed: ${err.message}`);
-      if (err.raw) {
-        wrappedError.raw = err.raw;
-      }
-      throw wrappedError;
-    }
   }
 
   async queryDirect(requestBody) {
@@ -329,10 +407,11 @@ class ChineseQAAPI {
       return fallback.trim();
     }
 
-    const reasoning = message?.reasoning || message?.reasoning_text || data?.choices?.[0]?.reasoning;
-    if (typeof reasoning === 'string' && reasoning.trim()) {
-      return reasoning.trim();
-    }
+    // Deliberately NOT falling back to message.reasoning here. Reasoning is
+    // the model's internal scratchpad; surfacing it would render planning text
+    // ("Analyze User Input: ...") as the answer. Treating it as absent instead
+    // lets query() see an empty reply and retry on the next model, which is
+    // the outcome we want when a reasoning model burns max_tokens on thinking.
 
     if (Array.isArray(message?.tool_calls) && message.tool_calls.length > 0) {
       return JSON.stringify(message.tool_calls, null, 2);

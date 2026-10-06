@@ -62,9 +62,16 @@ if (!$requestBody) {
         exit;
     }
 
+    // Default only applies when the client sends no model. Kept free so a
+    // bare prompt does not silently spend credits. Matches the browser-side
+    // default in config.js / src/api.js.
+    $configuredModel = isset($localConfig['OPENROUTER_MODEL']) && is_string($localConfig['OPENROUTER_MODEL'])
+        ? trim($localConfig['OPENROUTER_MODEL'])
+        : '';
+
     $model = isset($input['model']) && is_string($input['model']) && trim($input['model']) !== ''
         ? trim($input['model'])
-        : 'openai/gpt-4.1-mini';
+        : ($configuredModel !== '' ? $configuredModel : 'google/gemma-4-26b-a4b-it:free');
 
     $requestBody = [
         'model' => $model,

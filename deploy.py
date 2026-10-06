@@ -168,7 +168,7 @@ def sh_quote(value: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Deploy static site files via SSH/SCP.")
-    parser.add_argument("--host", required=False, help="SSH host alias from your SSH config", default="lightcat-org")
+    parser.add_argument("--host", required=False, help="SSH host alias from your SSH config", default="lightcatorg-lightcatorg")
     parser.add_argument("--remote-dir", required=False, help="Remote directory to wipe and upload into", default="/home/lightcatorg/apps/chineseqa/v1/public")
     parser.add_argument(
         "--project-dir",
