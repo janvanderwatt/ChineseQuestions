@@ -78,9 +78,18 @@ class ChineseQAApp {
         wrapper.classList.toggle('has-value', Boolean(input.value));
       };
 
-      input.addEventListener('input', syncClearState);
-      input.addEventListener('focus', syncClearState);
-      input.addEventListener('blur', syncClearState);
+      // Track if a clear is in progress to prevent syncClearState from
+      // hiding the button immediately during the clear click.
+      let clearing = false;
+
+      const syncClearStateGuarded = () => {
+        if (clearing) return;
+        syncClearState();
+      };
+
+      input.addEventListener('input', syncClearStateGuarded);
+      input.addEventListener('focus', syncClearStateGuarded);
+      input.addEventListener('blur', syncClearStateGuarded);
 
       input.addEventListener('keydown', event => {
         if (event.key !== 'Escape') {
@@ -92,13 +101,14 @@ class ChineseQAApp {
       });
 
       clearButton.addEventListener('click', () => {
+        clearing = true;
         input.value = '';
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-        input.focus();
-        // Keep the clear button visible briefly so the user sees feedback
-        // before the has-value class is removed by syncClearState.
         wrapper.classList.add('has-value');
-        setTimeout(() => syncClearState(), 300);
+        input.focus();
+        setTimeout(() => {
+          clearing = false;
+          syncClearState();
+        }, 300);
       });
 
       syncClearState();
@@ -233,6 +243,15 @@ class ChineseQAApp {
       root.classList.toggle('has-value', Boolean(input.value));
     };
 
+    // Track if a clear is in progress to prevent syncClearState from
+    // hiding the button immediately during the clear click.
+    let clearing = false;
+
+    const syncClearStateGuarded = () => {
+      if (clearing) return;
+      syncClearState();
+    };
+
     toggle.addEventListener('click', () => {
       if (isOpen) {
         close();
@@ -243,7 +262,7 @@ class ChineseQAApp {
     });
 
     input.addEventListener('input', () => {
-      syncClearState();
+      syncClearStateGuarded();
       open();
     });
 
@@ -318,17 +337,18 @@ class ChineseQAApp {
     });
 
     clearBtn.addEventListener('click', () => {
+      clearing = true;
       input.value = '';
-      syncClearState();
-      close();
-      // Keep the clear button visible briefly so the user sees feedback
-      // before the has-value class is removed by syncClearState.
       root.classList.add('has-value');
-      setTimeout(() => syncClearState(), 300);
+      close();
       // Focus returns to the field, but must not reopen the list on an
       // empty input -- that read as the clear not having worked.
       skipNextFocusOpen = true;
       input.focus();
+      setTimeout(() => {
+        clearing = false;
+        syncClearState();
+      }, 300);
     });
 
     document.addEventListener('click', event => {
