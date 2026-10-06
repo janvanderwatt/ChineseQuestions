@@ -33,6 +33,19 @@ body {
   }
 }
 
+/* Kept quiet so it stays visible without competing with the question
+   templates for attention. */
+.disclaimer {
+  margin: 0 0 0.85rem;
+  padding: 0.45rem 0.6rem;
+  border-left: 3px solid #1a8a7a;
+  border-radius: 3px;
+  background: #f4fbfa;
+  color: #46625e;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 .form-group {
   margin-bottom: 0.8rem;
   padding: 0;
@@ -493,6 +506,11 @@ button:active {
 }
 
 @media (max-width: 860px) {
+  .disclaimer {
+    font-size: 0.74rem;
+    padding: 0.4rem 0.5rem;
+  }
+
   .template-line {
     gap: 0.22rem;
     padding: 0.42rem 0.48rem;
