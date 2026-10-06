@@ -6,7 +6,7 @@
   1. Character meaning: "What does [char] mean in [sentence]?"
   2. Phrase alternative: "Why can't I use [phrase] instead of [phrase] in [sentence]?"
   3. Naturalness check: "Does [sentence] sound natural?"
-  4. Tone rewrite: "How else can I say [sentence] to sound [tone]?" — tone is a dropdown (friendlier / more casual / more formal / angrier / respectful)
+  4. Tone rewrite: "How else can I say [sentence] to sound [tone]?" — tone is a free-text field with suggested values offered via dropdown (friendlier / more casual / more formal / angrier / respectful, plus a few extra). Typed values are not stored.
   5. Word substitution: "What other words can I use instead of [word] in this sentence [sentence]?"
 - Each template has an inline **Ask** button (no separate heading per template)
 - Templates 4 and 5 must preserve the single-row inline layout; the tone dropdown is sized to sit inline with the other controls
@@ -23,7 +23,7 @@
 - Responsive, single-column layout (max-width 680px)
 - Compact mobile behavior targeting one-line template rows where possible (max two lines when needed)
 - Short inline inputs for words/phrases (`slot-input-short`, max 4.5rem) and wider inline inputs for sentences (`slot-input-long`, flex)
-- Inline `<select>` for the tone dropdown (`slot-select`), styled to match `slot-input` rather than inheriting the full-width input styling
+- Tone field (`slot-input-tone`) is a text input with a `<datalist>`, so suggestions appear as a dropdown but any adjective can be typed. Fixed width (`slot-input-tone-wrap`) keeps the row on one line; the value is never persisted.
 - Each template row is a flex line: label spans + inputs + **Ask** button, all inline — no per-template headings
 - Disclaimer at the top stating responses are AI-generated and may contain mistakes
 - Config input field for OpenRouter API key

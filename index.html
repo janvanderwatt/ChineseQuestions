@@ -58,13 +58,20 @@
         <span>How else can I say</span>
         <input class="slot-input slot-input-long" type="text" id="q4-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
         <span>to sound</span>
-        <select class="slot-select" id="q4-tone">
-          <option value="friendlier">friendlier</option>
-          <option value="more casual and informal">more casual / informal</option>
-          <option value="more formal">more formal</option>
-          <option value="angrier">angrier</option>
-          <option value="respectful">respectful</option>
-        </select>
+        <input class="slot-input slot-input-tone" type="text" id="q4-tone" list="q4-tone-options"
+               placeholder="friendlier" value="respectful" maxlength="40"
+               autocomplete="off" spellcheck="false">
+        <datalist id="q4-tone-options">
+          <option value="friendlier"></option>
+          <option value="more casual / informal"></option>
+          <option value="more formal"></option>
+          <option value="angrier"></option>
+          <option value="respectful"></option>
+          <option value="sarcastic"></option>
+          <option value="childish"></option>
+          <option value="shy"></option>
+          <option value="excited"></option>
+        </datalist>
         <button id="q4-submit">Ask</button>
       </div>
     </div>

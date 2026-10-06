@@ -39,6 +39,10 @@ class ChineseQAApp {
         wrapper.classList.add('slot-input-long-wrap');
       }
 
+      if (input.classList.contains('slot-input-tone')) {
+        wrapper.classList.add('slot-input-tone-wrap');
+      }
+
       if (!input.classList.contains('slot-input')) {
         wrapper.classList.add('full-width');
       }
@@ -385,8 +389,9 @@ class ChineseQAApp {
 
   async handleQuestion4() {
     const sentence = document.getElementById('q4-sentence').value.trim();
-    const toneSelect = document.getElementById('q4-tone');
-    const tone = toneSelect ? toneSelect.value.trim() : '';
+    const toneField = document.getElementById('q4-tone');
+    // Free text: the datalist only suggests, the user can type anything.
+    const tone = toneField ? toneField.value.trim() : '';
 
     if (!sentence || !tone) {
       this.showResponse('Please fill in all fields', true, 'Q4');

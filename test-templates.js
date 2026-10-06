@@ -64,7 +64,7 @@ function expect(label, condition, detail) {
   expect('Q5 has no duplicated "instead of"', !/instead of instead of/i.test(q5.question));
   expect('Q5 passes sentence as context', q5.context === '我的朋友很矮');
 
-  // The dropdown value must flow into the prompt, not a hardcoded default.
+  // The tone value must flow into the prompt, not a hardcoded default.
   fields['q4-tone'].value = 'angrier';
   captured.length = 0;
   await app.handleQuestion4();
@@ -73,6 +73,27 @@ function expect(label, condition, detail) {
     captured[0].question.includes('angrier') && !captured[0].question.includes('respectful'),
     captured[0].question
   );
+
+  // The tone field is free text, so a custom adjective must survive verbatim.
+  fields['q4-tone'].value = 'disappointed but polite';
+  captured.length = 0;
+  await app.handleQuestion4();
+  expect(
+    'Q4 accepts a custom typed tone',
+    captured[0].question.includes('sounds disappointed but polite'),
+    captured[0].question
+  );
+
+  fields['q4-tone'].value = '  whimsical  ';
+  captured.length = 0;
+  await app.handleQuestion4();
+  expect(
+    'Q4 trims whitespace around a typed tone',
+    captured[0].question.includes('sounds whimsical:'),
+    captured[0].question
+  );
+
+  fields['q4-tone'].value = 'respectful';
 
   // Missing input must be rejected before any request is made.
   captured.length = 0;
