@@ -162,6 +162,7 @@ class ChineseQAAPI {
             + 'Always provide clear explanations and practical examples to help the user understand Chinese better. '
             + 'STRICT FORMAT RULE: every Chinese character, word, phrase, and sentence must be bold with no exceptions. Never output raw Chinese outside bold formatting. '
             + 'STRICT OUTPUT RULE: Immediately after each Chinese item, include pinyin in brackets in italics. Example: **我的朋友很短** [*Wǒ de péngyǒu hěn duǎn*]. '
+            + 'STRICT FORMAT RULE: never use LaTeX, Markdown math, or backslash commands. Write symbols directly as plain Unicode characters (→ ← ≈ ≠ °), not as $\\rightarrow$ or similar. '
             + 'Don\'t suggest follow-up prompts.'
         },
         {

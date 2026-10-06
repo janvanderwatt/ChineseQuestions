@@ -561,8 +561,78 @@ class ChineseQAApp {
     return html.join('');
   }
 
+  // Models occasionally emit LaTeX for simple symbols (e.g. "$\rightarrow$"
+  // instead of the arrow character). Rendered as-is it reads as noise to a
+  // language learner, so map the common ones to plain Unicode. Anything not
+  // in the table is unwrapped rather than left showing backslashes.
+  normalizeLatexSymbols(text) {
+    if (!text || typeof text !== 'string' || !text.includes('$')) {
+      return text;
+    }
+
+    const symbols = {
+      rightarrow: '→',
+      leftarrow: '←',
+      uparrow: '↑',
+      downarrow: '↓',
+      leftrightarrow: '↔',
+      Rightarrow: '⇒',
+      Leftrightarrow: '⇔',
+      times: '×',
+      div: '÷',
+      pm: '±',
+      cdot: '·',
+      leq: '≤',
+      geq: '≥',
+      neq: '≠',
+      approx: '≈',
+      equiv: '≡',
+      infty: '∞',
+      degree: '°',
+      celsius: '°C',
+      checkmark: '✓',
+      textbullet: '•',
+      ldots: '…',
+      dots: '…'
+    };
+
+    // Brace-arg commands first, so the argument is consumed with them rather
+    // than being left behind as a stray "foo{x}".
+    let cleaned = text
+      .replace(/\\(?:text|mathrm|mathbf|mathit|textbf|textit|textbf)\{([^{}]*)\}/g, '$1')
+      .replace(/\\boxed\{([^{}]*)\}/g, '$1')
+      .replace(/\\color\{[^{}]*\}\{([^{}]*)\}/g, '$1');
+
+    // \cmd{arg}: known symbol wins, otherwise keep the name and drop the braces.
+    cleaned = cleaned.replace(/\\([A-Za-z]+)\{([^{}]*)\}/g, (match, name, arg) => {
+      if (Object.prototype.hasOwnProperty.call(symbols, name)) {
+        return symbols[name];
+      }
+      return name + arg;
+    });
+
+    cleaned = cleaned
+      // Bare \cmd with no argument.
+      .replace(/\\([A-Za-z]+)/g, (match, name) => (
+        Object.prototype.hasOwnProperty.call(symbols, name) ? symbols[name] : name
+      ))
+      // Strip surviving $...$ delimiters and LaTeX spacing commands.
+      .replace(/\$\$?([^$]*)\$\$?/g, '$1')
+      .replace(/\\[,;:! ]/g, ' ');
+
+    if (cleaned === text) {
+      // Nothing was LaTeX -- return the original, spacing untouched.
+      return text;
+    }
+
+    // Removing "$" delimiters can leave a gap before punctuation
+    // ("$\\to$." -> "→ ."). Fix just that; do not collapse runs of spaces
+    // elsewhere, since markdown list markers rely on them.
+    return cleaned.replace(/[ \t]+([,.!?;:])/g, '$1');
+  }
+
   formatInlineMarkdown(text) {
-    return text
+    return this.normalizeLatexSymbols(text)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
       .replace(/_(.+?)_/g, '<em>$1</em>')
