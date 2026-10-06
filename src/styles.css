@@ -14,9 +14,9 @@ body {
   text-size-adjust: 100%;
 }
 
+/* min() already caps the width, so max-width was a redundant second cap. */
 .container {
   width: min(680px, 100%);
-  max-width: 680px;
   margin: 0 auto;
   padding: 1rem;
 }
@@ -24,32 +24,13 @@ body {
 @media (min-width: 861px) {
   .container {
     width: 95%;
-    max-width: none;
   }
 }
 
 @media (max-width: 860px) and (orientation: landscape) {
   .container {
     width: 99vw;
-    max-width: none;
   }
-}
-
-header {
-  text-align: center;
-  margin-bottom: 1rem;
-}
-
-h1 {
-  font-size: 1.4rem;
-  margin-bottom: 0.2rem;
-  color: #000;
-}
-
-.subtitle {
-  color: #999;
-  font-size: 0.8rem;
-  margin-bottom: 0.5rem;
 }
 
 .form-group {
@@ -150,14 +131,16 @@ textarea {
   width: 100%;
 }
 
+/* app.js wraps every text/password input in .input-clear-wrap (to host the
+   clear button), and the WRAPPER is the flex item inside .template-line.
+   So the wrapper owns the sizing and the input just fills it. Sizing used to
+   be declared on both, with a `flex: initial` reset cancelling the input copy
+   -- which also meant the mobile overrides below could not reach the input,
+   because the reset selector outranked them. Keep the sizing in one place. */
 .input-clear-wrap .slot-input {
   width: 100%;
-  padding-right: 1.45rem;
-}
-
-.input-clear-wrap .slot-input-long {
-  flex: initial;
   min-width: 0;
+  padding-right: 1.45rem;
 }
 
 .input-clear-wrap.slot-input-short-wrap {
@@ -211,14 +194,15 @@ textarea {
   background: #edf8f6;
 }
 
+/* Alignment only -- width/flex live on .input-clear-wrap.*-wrap above.
+   `.input-clear-wrap .slot-input` already sets width:100%, so a width here
+   would be overridden anyway. */
 .slot-input-short {
-  width: 4.5rem;
   text-align: center;
 }
 
 .slot-input-long {
-  flex: 1 1 18rem;
-  min-width: 14rem;
+  text-align: left;
 }
 
 input:focus, textarea:focus {
@@ -273,12 +257,10 @@ button:active {
   font-size: 0.95rem;
 }
 
-.response p {
-  color: #333;
-  line-height: 1.5;
-  font-size: 0.9rem;
-}
-
+/* app.js renders all answer markup inside .response-body, so this is the
+   single source for answer text. A separate `.response p` rule duplicated
+   the colour and font-size but set a different line-height, and won on
+   specificity -- two rules fighting over the same paragraphs. */
 .response-body {
   color: #333;
   line-height: 1.55;
@@ -325,13 +307,30 @@ button:active {
   color: #136f63;
 }
 
-.error {
+/* Both of these are toggled on the .response element itself (see
+   showResponse in app.js).
+   `.form-group.is-active .response` sets border-color to the green accent at
+   specificity (0,3,0), so an error rule needs to match that to win -- a plain
+   `.response.error` (0,2,0) silently loses and leaves errors with a green
+   border. Scoping to `.response` also stops `.error`/`.loading` leaking onto
+   unrelated elements. */
+.response.error {
   background: #ffe8e8;
+}
+
+.form-group.is-active .response.error {
   border-color: #f0b8b8;
+}
+
+.response.error h3,
+.response.error .response-body {
   color: #b71c1c;
 }
 
-.loading {
+/* The "Loading..." text is rendered inside .response-body, so the body has
+   to be targeted too or .response-body's own colour wins. */
+.response.loading,
+.response.loading .response-body {
   text-align: center;
   color: #1a8a7a;
   font-style: italic;
@@ -339,7 +338,6 @@ button:active {
 }
 
 .config-section {
-  margin-top: 1rem;
   padding: 0.8rem;
   background: #f5f5f5;
   border-radius: 3px;
@@ -375,10 +373,6 @@ button:active {
 .config-key-indicator.is-missing {
   background: #f0f0f0;
   color: #666;
-}
-
-.config-wrap .config-section {
-  margin-top: 0;
 }
 
 .config-messages {
@@ -500,10 +494,8 @@ button:active {
 
 @media (max-width: 860px) {
   .template-line {
-    align-items: center;
     gap: 0.22rem;
     padding: 0.42rem 0.48rem;
-    margin-bottom: 0;
     font-size: 0.84rem;
   }
 
@@ -512,22 +504,16 @@ button:active {
     font-size: 0.88rem;
   }
 
-  .slot-input-short {
-    width: 3.35rem;
-    min-width: 3.35rem;
-    text-align: center;
-  }
-
+  /* Narrow screens: shrink the short slot so a two-slot row still fits.
+     Declared on the wrapper only, matching where the base rule sets it. */
   .input-clear-wrap.slot-input-short-wrap {
-    width: 3.35rem;
-    min-width: 3.35rem;
+    width: 4.75rem;
+    min-width: 3.5rem;
   }
 
-  .slot-input-long {
-    width: auto;
+  .input-clear-wrap.slot-input-long-wrap {
     min-width: 9rem;
     flex: 1 1 10rem;
-    text-align: left;
   }
 
   button {
@@ -536,7 +522,6 @@ button:active {
   }
 
   .form-group {
-    padding: 0;
     margin-bottom: 0.5rem;
   }
 
@@ -548,8 +533,7 @@ button:active {
     font-size: 0.86rem;
   }
 
-  .response-body,
-  .response p {
+  .response-body {
     font-size: 0.84rem;
   }
 }
