@@ -76,6 +76,17 @@ input, textarea {
   font-size: 0.9rem;
 }
 
+/* Placeholder text, 40% lighter than Chrome's default #757575. The colour was
+   never set explicitly before, so this pins it rather than relying on the UA
+   default. Contrast drops to 2.16:1, which is below the 4.5:1 AA threshold --
+   acceptable here because a placeholder is a hint, not the field's label, and
+   every input in this app carries a visible label or a prefilled value. */
+input::placeholder,
+textarea::placeholder {
+  color: #acacac;
+  opacity: 1;
+}
+
 textarea {
   resize: vertical;
   min-height: 50px;
@@ -142,27 +153,32 @@ textarea {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
-  width: 10.5rem;
-  min-width: 7rem;
+  width: 11.5rem;
+  min-width: 8rem;
 }
 
 .combobox .slot-input-tone {
   width: 100%;
   min-width: 0;
-  /* Room for the clear button and the toggle, which overlap this edge. */
-  padding-right: 3.1rem;
+  /* Clears both the clear button and the toggle, which sit over this edge. */
+  padding-right: 3.7rem;
 }
 
+/* Toggle and clear button are adjacent controls with different effects --
+   one opens the list, the other empties the field. They were previously
+   separated by 2px, so a near-miss on the x hit the toggle and opened the
+   dropdown instead of clearing, which read as needing a second click. They
+   now have a real gutter and larger targets. */
 .combobox-toggle {
   position: absolute;
-  right: 1.55rem;
+  right: 2.2rem;
   top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.1rem;
-  height: 1.1rem;
+  width: 1.25rem;
+  height: 1.25rem;
   padding: 0;
   border: none;
   border-radius: 3px;
@@ -185,7 +201,9 @@ textarea {
    for it is scoped to .input-clear-wrap.has-value, which this markup does
    not have, so the combobox needs its own equivalent. */
 .combobox .combobox-clear {
-  right: 0.28rem;
+  right: 0.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
   z-index: 1;
   display: none;
 }

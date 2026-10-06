@@ -131,6 +131,7 @@ class ChineseQAApp {
     let options = [];
     let activeIndex = -1;
     let isOpen = false;
+    let skipNextFocusOpen = false;
 
     const setExpanded = expanded => {
       isOpen = expanded;
@@ -243,6 +244,12 @@ class ChineseQAApp {
     });
 
     input.addEventListener('focus', () => {
+      // An explicit clear returns focus to the input, and this handler would
+      // then pop the list open again on an empty field. Skip that one bounce.
+      if (skipNextFocusOpen) {
+        skipNextFocusOpen = false;
+        return;
+      }
       // Show the suggestions when tabbing in, as the APG example does.
       open();
     });
@@ -310,6 +317,9 @@ class ChineseQAApp {
       input.value = '';
       syncClearState();
       close();
+      // Focus returns to the field, but must not reopen the list on an
+      // empty input -- that read as the clear not having worked.
+      skipNextFocusOpen = true;
       input.focus();
     });
 
