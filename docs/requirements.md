@@ -5,10 +5,13 @@
 # Rough requirements
 - Write an app with a few pre-defined question structures that the user can fill in
 Examples:
-  - What does character [ 很 ] mean in this sentence [ 我的朋友很高 ] ?
+  - What does [ 很 ] mean, or what function does it perform, in this sentence [ 我的朋友很高 ] ?
   - Can I use [ 段 ] instead of [ 矮 ] in this sentence [ 我的朋友很矮 ] ?
   - Does [ 我的朋友很矮 ] sound natural?
 - Each template has an inline "Ask" button (no separate heading per template)
+- I also want to rephrase a sentence for a specific tone (friendlier, informal, formal, angry, respectful)
+- And ask for alternative words to use instead of a given word in my sentence
+- Since answers come from an AI, say so plainly at the top of the page
 - On submit, pass a relevant query to an AI with some prompting to answer the user's question.
 - Prompt the AI to explain in English with simple examples if possible. Don't be too verbose or theoretical.
 - I like modern fonts that are Simplified Chinese-capable

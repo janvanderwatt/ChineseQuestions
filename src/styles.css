@@ -133,6 +133,31 @@ textarea {
   line-height: 1.2;
 }
 
+/* Styled to sit inline with .slot-input in a template row. The generic
+   `input, textarea` rule above gives inputs a full border and 100% width,
+   which a <select> must not inherit -- it is a fixed-size control that keeps
+   the browser's own dropdown arrow, so appearance is not overridden. */
+.slot-select {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  padding: 0.3rem 0.4rem;
+  border: none;
+  border-bottom: 2px solid #1a8a7a;
+  border-radius: 0;
+  background: #f4fbfa;
+  color: #234440;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.slot-select:focus {
+  outline: none;
+  border-bottom-color: #146659;
+  box-shadow: none;
+}
+
 .input-clear-wrap {
   position: relative;
   display: inline-flex;

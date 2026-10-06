@@ -51,6 +51,37 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label class="sr-only" for="q4-sentence">Sentence to rephrase</label>
+      <label class="sr-only" for="q4-tone">Target tone</label>
+      <div class="template-line">
+        <span>How else can I say</span>
+        <input class="slot-input slot-input-long" type="text" id="q4-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
+        <span>to sound</span>
+        <select class="slot-select" id="q4-tone">
+          <option value="friendlier">friendlier</option>
+          <option value="more casual and informal">more casual / informal</option>
+          <option value="more formal">more formal</option>
+          <option value="angrier">angrier</option>
+          <option value="respectful">respectful</option>
+        </select>
+        <button id="q4-submit">Ask</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="sr-only" for="q5-word">Word to replace</label>
+      <label class="sr-only" for="q5-sentence">Sentence containing the word</label>
+      <div class="template-line">
+        <span>What else can I use instead of</span>
+        <input class="slot-input slot-input-short" type="text" id="q5-word" placeholder="矮" maxlength="8" value="矮">
+        <span>in this sentence</span>
+        <input class="slot-input slot-input-long" type="text" id="q5-sentence" placeholder="我的朋友很矮" value="我的朋友很矮">
+        <span>?</span>
+        <button id="q5-submit">Ask</button>
+      </div>
+    </div>
+
     <div id="response" class="response"></div>
 
     <details id="debug-panel-root" class="debug-wrap" hidden>

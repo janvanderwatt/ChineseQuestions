@@ -45,6 +45,21 @@
 - [x] Stage 1-4 commits
 - [x] Verify clean git status
 
+## Stage 7: Tone Rewrite + Word Substitution ✓
+- [x] Add Q4 template: "How else can I say [sentence] to sound [tone]?" with tone dropdown
+- [x] Add Q5 template: "What other words can I use instead of [word] in this sentence [sentence]?"
+- [x] Style the dropdown inline to match the slot inputs
+- [x] Register Q4/Q5 in the source→button map so the response attaches to the right row
+- [x] Update app-reqs.md and requirements notes
+
+## Stage 8: Free Model + Hardening ✓
+- [x] Default to a free OpenRouter model instead of paid gpt-4.1-mini
+- [x] Retry on the next model for rate limits, upstream errors and empty replies
+- [x] Stop rendering model reasoning as the answer
+- [x] Resolve conflicting CSS specificity (error border, mobile input sizing)
+- [x] Normalize LaTeX symbols to Unicode in rendered answers
+- [x] Add AI disclaimer above the templates
+
 ## Stage 6: Deployment Ready ✓
 - [x] Document SSH integration points
 - [x] Prepare for web deployment
@@ -55,3 +70,4 @@
 - [ ] Add requestBody allowlist validation in PHP gateway
 - [ ] Add gateway origin/shared-secret check
 - [ ] Add simple per-IP rate limiting for gateway endpoint
+- [ ] Verify Q4/Q5 template rows still fit one line on narrow mobile screens

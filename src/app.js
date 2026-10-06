@@ -99,6 +99,14 @@ class ChineseQAApp {
       this.handleQuestion3();
     });
 
+    document.getElementById('q4-submit')?.addEventListener('click', () => {
+      this.handleQuestion4();
+    });
+
+    document.getElementById('q5-submit')?.addEventListener('click', () => {
+      this.handleQuestion5();
+    });
+
     document.getElementById('save-config')?.addEventListener('click', async () => {
       await this.saveConfig();
     });
@@ -345,7 +353,7 @@ class ChineseQAApp {
       return;
     }
 
-    const question = `What does the character "${char}" mean (or do) in this sentence: "${sentence}"?`;
+    const question = `What does "${char}" mean, or what function does it perform, in this sentence: "${sentence}"?`;
     await this.submitQuery(question, 'Q1', sentence);
   }
 
@@ -373,6 +381,38 @@ class ChineseQAApp {
 
     const question = `Does this sentence sound natural to native Chinese speakers: "${sentence}"? If not, how would you rephrase it?`;
     await this.submitQuery(question, 'Q3', sentence);
+  }
+
+  async handleQuestion4() {
+    const sentence = document.getElementById('q4-sentence').value.trim();
+    const toneSelect = document.getElementById('q4-tone');
+    const tone = toneSelect ? toneSelect.value.trim() : '';
+
+    if (!sentence || !tone) {
+      this.showResponse('Please fill in all fields', true, 'Q4');
+      return;
+    }
+
+    const question = `Rewrite this Chinese sentence so that it sounds ${tone}: "${sentence}". `
+      + 'Give the rewritten sentence first, then a short explanation of what changed and why '
+      + 'it conveys that tone. Keep the meaning the same.';
+    await this.submitQuery(question, 'Q4', sentence);
+  }
+
+  async handleQuestion5() {
+    const word = document.getElementById('q5-word').value.trim();
+    const sentence = document.getElementById('q5-sentence').value.trim();
+
+    if (!word || !sentence) {
+      this.showResponse('Please fill in all fields', true, 'Q5');
+      return;
+    }
+
+    const question = `In the sentence "${sentence}", what other words could I use instead of "${word}"? `
+      + 'Suggest several alternatives that fit the context, and for each one say whether it changes '
+      + 'the meaning, the level of politeness, or the formality compared with the original. '
+      + `First confirm that "${word}" appears in the sentence and is being used correctly.`;
+    await this.submitQuery(question, 'Q5', sentence);
   }
 
   async submitQuery(question, source, context = '') {
@@ -428,7 +468,9 @@ class ChineseQAApp {
     const buttonIdBySource = {
       Q1: 'q1-submit',
       Q2: 'q2-submit',
-      Q3: 'q3-submit'
+      Q3: 'q3-submit',
+      Q4: 'q4-submit',
+      Q5: 'q5-submit'
     };
 
     const buttonId = buttonIdBySource[source];
