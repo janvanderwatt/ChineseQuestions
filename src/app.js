@@ -15,6 +15,10 @@ class ChineseQAApp {
   init() {
     this.setupEventListeners();
     this.initClearButtons();
+    // Must run after initClearButtons(): setupToneSuggestions binds to the
+    // .input-clear-wrap wrapper that initClearButtons creates, so binding it
+    // earlier finds no wrapper and silently does nothing.
+    this.setupToneSuggestions();
     this.loadConfig();
   }
 
@@ -87,6 +91,39 @@ class ChineseQAApp {
       });
 
       syncClearState();
+    });
+  }
+
+  // The tone field draws its own chevron (see .slot-input-tone in styles.css)
+  // because the shared clear button covers the native datalist indicator. A
+  // drawn arrow has to do the opening itself, otherwise it is just decoration:
+  // clicking it focuses the input and dispatches the ArrowDown that Chrome
+  // reads as "show suggestions". Choosing an item fills the input, so the
+  // field still accepts anything typed by hand.
+  setupToneSuggestions() {
+    const tone = document.getElementById('q4-tone');
+    const wrap = tone?.closest('.input-clear-wrap');
+    if (!tone || !wrap) {
+      return;
+    }
+
+    const openSuggestions = () => {
+      tone.focus();
+      tone.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        code: 'ArrowDown',
+        keyCode: 40,
+        which: 40,
+        bubbles: true
+      }));
+    };
+
+    wrap.addEventListener('click', event => {
+      // Ignore clicks on the clear button itself; it handles its own action.
+      if (event.target.closest('.clear-input-btn')) {
+        return;
+      }
+      openSuggestions();
     });
   }
 

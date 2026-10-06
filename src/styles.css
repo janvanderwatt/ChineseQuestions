@@ -136,15 +136,31 @@ textarea {
 /* Tone field: a free-text input backed by <datalist>, so the suggested
    adjectives are offered without blocking anything else the user types.
    Fixed width keeps the row on one line; it does not grow with the value. */
+/* Tone field: free text with suggestions offered via <datalist>.
+   The shared clear button sits exactly where Chrome draws the datalist's own
+   dropdown indicator, so it swallowed every click on the arrow and the list
+   could only be opened from the keyboard. The indicator is therefore drawn
+   here instead, offset to the left of the clear button, and the padding
+   reserves room for both. */
 .input-clear-wrap.slot-input-tone-wrap {
   flex: 0 0 auto;
-  width: 9.5rem;
-  min-width: 6.5rem;
+  width: 10.5rem;
+  min-width: 7rem;
 }
 
-.slot-input-tone {
+.input-clear-wrap .slot-input-tone {
   width: 100%;
   min-width: 0;
+  /* Chevron, drawn rather than borrowed from the native widget. */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231a8a7a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1.55rem center;
+  background-size: 10px 6px;
+}
+
+/* Keep the arrow clear of the text so a long value does not collide with it. */
+.input-clear-wrap .slot-input-tone:focus {
+  background-color: #edf8f6;
 }
 
 .input-clear-wrap {
@@ -168,6 +184,13 @@ textarea {
   width: 100%;
   min-width: 0;
   padding-right: 1.45rem;
+}
+
+/* Sits after the shared rule above so it wins on source order at equal
+   specificity -- the tone field needs room for a chevron AND a clear button,
+   where every other field only has to make space for the clear button. */
+.input-clear-wrap .slot-input-tone {
+  padding-right: 2.9rem;
 }
 
 .input-clear-wrap.slot-input-short-wrap {
