@@ -670,3 +670,83 @@ button:active {
     font-size: 0.84rem;
   }
 }
+
+/* Site password gate -------------------------------------------------------
+   Hidden by default: the overlay appears only when the gateway reports that a
+   password is required. Reuses the teal palette so it reads as part of the app. */
+.site-auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.site-auth-overlay[hidden] {
+  display: none;
+}
+
+.site-auth-card {
+  width: min(22rem, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem;
+  background: #ffffff;
+  border: 1px solid #cfe7e2;
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(20, 102, 89, 0.18);
+}
+
+.site-auth-card h2 {
+  font-size: 1rem;
+  color: #146659;
+}
+
+.site-auth-message {
+  font-size: 0.86rem;
+  color: #333333;
+}
+
+.site-auth-message.is-error {
+  color: #b00020;
+}
+
+.site-auth-card input {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.95rem;
+  border: 1px solid #b0b0b0;
+  border-radius: 4px;
+}
+
+.site-auth-card button {
+  align-self: flex-start;
+}
+
+.site-auth-card button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+body.site-auth-open {
+  overflow: hidden;
+}
+
+/* Configuration section: current gate state plus the "forget it" action. */
+.site-auth-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.site-auth-hint {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #666666;
+}

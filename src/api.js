@@ -13,6 +13,21 @@ window.CONFIG = window.CONFIG || {
 const BUILTIN_DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
 const BUILTIN_DEFAULT_FALLBACKS = ['nvidia/nemotron-3-super-120b-a12b:free'];
 
+// --- Optional shared site password ------------------------------------------
+// The gateway may require a password (set SITE_PASSWORD_HASH in
+// api/gateway-config.php). The browser stores it once and replays it on every
+// gateway request; the server verifies it against the bcrypt hash. src/app.js
+// owns the prompt and the localStorage writes, so the key lives here once.
+window.SITE_PASSWORD_STORAGE_KEY = 'chineseqa.sitePassword';
+
+function getStoredSitePassword() {
+  try {
+    return localStorage.getItem(window.SITE_PASSWORD_STORAGE_KEY) || '';
+  } catch (_error) {
+    return '';
+  }
+}
+
 // Failures worth retrying on the next model: transient upstream/provider
 // errors, rate limits, and empty replies. Empty replies matter because
 // reasoning models can spend the whole max_tokens budget on internal
@@ -52,6 +67,35 @@ class ChineseQAAPI {
 
   getMode() {
     return this.apiKey ? 'direct' : 'gateway';
+  }
+
+  // Headers for every gateway request. The site password is optional; when the
+  // server does not require one it simply sends nothing extra.
+  gatewayHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    const password = getStoredSitePassword();
+    if (password) {
+      headers['X-Site-Password'] = password;
+    }
+    return headers;
+  }
+
+  // Asks the gateway whether a password is required and whether the one this
+  // browser holds is valid. Cheap: the server never spends the request budget
+  // on it. Throws when the gateway is unreachable, so callers can fail open.
+  async checkGatewayStatus() {
+    const separator = this.gatewayUrl.includes('?') ? '&' : '?';
+    const response = await fetch(`${this.gatewayUrl}${separator}status=1`, {
+      method: 'GET',
+      headers: this.gatewayHeaders(),
+      cache: 'no-store'
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gateway status check failed: HTTP ${response.status}`);
+    }
+
+    return response.json();
   }
 
   async query(question, context = '', options = {}) {
@@ -125,6 +169,15 @@ class ChineseQAAPI {
           if (err.raw) {
             wrappedError.raw = err.raw;
           }
+          if (err.status) {
+            wrappedError.status = err.status;
+          }
+          if (err.code) {
+            wrappedError.code = err.code;
+          }
+          if (err.retryAfter) {
+            wrappedError.retryAfter = err.retryAfter;
+          }
           wrappedError.attempts = attempts;
           throw wrappedError;
         }
@@ -134,6 +187,15 @@ class ChineseQAAPI {
     const wrappedError = new Error(`API failed: ${lastError?.message || 'No model available'}`);
     if (lastError?.raw) {
       wrappedError.raw = lastError.raw;
+    }
+    if (lastError?.status) {
+      wrappedError.status = lastError.status;
+    }
+    if (lastError?.code) {
+      wrappedError.code = lastError.code;
+    }
+    if (lastError?.retryAfter) {
+      wrappedError.retryAfter = lastError.retryAfter;
     }
     wrappedError.attempts = attempts;
     throw wrappedError;
@@ -217,9 +279,7 @@ class ChineseQAAPI {
 
     const response = await fetch(this.gatewayUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: this.gatewayHeaders(),
       body: JSON.stringify({
         prompt,
         model: requestBody.model,
@@ -227,10 +287,14 @@ class ChineseQAAPI {
       })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       const apiMessage = data?.error?.message || data?.message || `Gateway error: ${response.status}`;
-      throw new Error(apiMessage);
+      const error = new Error(apiMessage);
+      error.status = response.status;
+      error.code = data?.error?.code || '';
+      error.retryAfter = Number(data?.error?.retryAfter ?? data?.retryAfter ?? 0) || null;
+      throw error;
     }
 
     // Gateway may return either OpenRouter-like shape or { content: "..." }.
@@ -254,9 +318,7 @@ class ChineseQAAPI {
   async queryViaGatewayStream(requestBody, prompt, onToken) {
     const response = await fetch(this.gatewayUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: this.gatewayHeaders(),
       body: JSON.stringify({
         prompt,
         model: requestBody.model,
@@ -270,16 +332,26 @@ class ChineseQAAPI {
   async consumeStreamingResponse(response, onToken, sourceLabel) {
     if (!response.ok) {
       let errorMessage = `${sourceLabel} error: ${response.status}`;
-      try {
-        const data = await response.json();
-        errorMessage = data?.error?.message || data?.message || errorMessage;
-      } catch (_error) {
-        const text = await response.text().catch(() => '');
-        if (text.trim()) {
-          errorMessage = text.trim();
+      let errorCode = '';
+      let retryAfter = null;
+
+      const rawText = await response.text().catch(() => '');
+      if (rawText.trim()) {
+        try {
+          const data = JSON.parse(rawText);
+          errorMessage = data?.error?.message || data?.message || errorMessage;
+          errorCode = data?.error?.code || '';
+          retryAfter = Number(data?.error?.retryAfter ?? data?.retryAfter ?? 0) || null;
+        } catch (_error) {
+          errorMessage = rawText.trim();
         }
       }
-      throw new Error(errorMessage);
+
+      const error = new Error(errorMessage);
+      error.status = response.status;
+      error.code = errorCode;
+      error.retryAfter = retryAfter;
+      throw error;
     }
 
     if (!response.body) {

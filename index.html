@@ -108,6 +108,16 @@
       </div>
     </div>
 
+    <div class="form-group">
+      <label class="sr-only" for="q6-word">Word to use</label>
+      <div class="template-line">
+        <span>How do I use</span>
+        <input class="slot-input slot-input-long" type="text" id="q6-word" placeholder="担心" maxlength="8" value="担心">
+        <span>in a natural sentence?</span>
+        <button id="q6-submit">Ask</button>
+      </div>
+    </div>
+
     <div id="response" class="response"></div>
 
     <details id="debug-panel-root" class="debug-wrap" hidden>
@@ -151,8 +161,32 @@
         <button id="save-config">Validate + Save Key</button>
         <div id="config-messages" class="config-messages" aria-live="polite"></div>
         <p>Key is validated once before local save. The saved key is never re-populated into this input. Leave empty and save to use the server PHP gateway.</p>
+
+        <div class="site-auth-row">
+          <span id="site-auth-indicator" class="config-key-indicator is-missing">Site password not set</span>
+          <button type="button" id="site-lock">Lock site</button>
+        </div>
+        <p class="site-auth-hint">If the server requires a site password, it is stored in this browser only. Lock site forgets it.</p>
       </div>
     </details>
+  </div>
+
+  <!-- Optional site-wide password gate. Shown only when the PHP gateway
+       reports that a password is required and this browser has not supplied a
+       valid one yet. Hidden by default so a gateway without a password never
+       blocks the page. -->
+  <div id="site-auth-overlay" class="site-auth-overlay" hidden>
+    <form id="site-auth-form" class="site-auth-card" novalidate>
+      <h2>Site password</h2>
+      <p id="site-auth-message" class="site-auth-message" role="status" aria-live="polite">
+        This site is password protected. Enter the password to continue.
+      </p>
+      <label class="sr-only" for="site-auth-password">Site password</label>
+      <input type="password" id="site-auth-password" autocomplete="current-password"
+             spellcheck="false" maxlength="200" required
+             data-clear-enabled="true">
+      <button type="submit" id="site-auth-submit">Unlock</button>
+    </form>
   </div>
 
   <script src="src/api.js"></script>

@@ -5,6 +5,15 @@ class ChineseQAApp {
     this.api = null;
     this.storageKey = 'apiKey';
     this.storageKeySavedAt = 'apiKeySavedAt';
+    // Optional site-wide password gate, resolved against the gateway on load.
+    this.siteAuth = {
+      required: false,
+      authorized: false,
+      lockedOut: false,
+      retryAfter: 0,
+      limits: null,
+      checked: false
+    };
     const debugEnabled = Boolean(window.CONFIG?.ENABLE_DEBUG_PANEL);
     this.debug = window.AppDebug
       ? new window.AppDebug({ enabled: debugEnabled })
@@ -20,6 +29,7 @@ class ChineseQAApp {
     // earlier finds no wrapper and silently does nothing.
     this.setupToneSuggestions();
     this.loadConfig();
+    this.initSiteAuth();
   }
 
   initClearButtons() {
@@ -386,6 +396,10 @@ class ChineseQAApp {
       this.handleQuestion5();
     });
 
+    document.getElementById('q6-submit')?.addEventListener('click', () => {
+      this.handleQuestion6();
+    });
+
     document.getElementById('save-config')?.addEventListener('click', async () => {
       await this.saveConfig();
     });
@@ -613,6 +627,205 @@ class ChineseQAApp {
     }, 10550);
   }
 
+  // --- Optional site-wide password gate ------------------------------------
+  // The server decides whether a password is required (SITE_PASSWORD_HASH in
+  // api/gateway-config.php). This browser stores it once and replays it on
+  // every gateway request. "Lock site" forgets it. The overlay is shown only
+  // when the gateway actually asks for one, so an unprotected deployment never
+  // blocks the page.
+
+  initSiteAuth() {
+    document.getElementById('site-auth-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      const input = document.getElementById('site-auth-password');
+      this.submitSitePassword(input ? input.value : '');
+    });
+
+    document.getElementById('site-lock')?.addEventListener('click', () => {
+      this.lockSite();
+    });
+
+    // Fire and forget: a failed probe must not block the app, because the
+    // gateway still enforces the password on every real request.
+    this.refreshSiteAuthStatus().catch(error => {
+      this.updateDebug('status', `Site auth status unavailable: ${error.message}`);
+    });
+  }
+
+  async refreshSiteAuthStatus() {
+    if (!this.api) {
+      this.initAPI('');
+    }
+
+    const status = await this.api.checkGatewayStatus();
+    this.siteAuth.required = Boolean(status?.authRequired);
+    this.siteAuth.authorized = status?.authorized !== false;
+    this.siteAuth.lockedOut = Boolean(status?.lockedOut);
+    this.siteAuth.retryAfter = Number(status?.retryAfter) || 0;
+    this.siteAuth.limits = status?.limits || null;
+    this.siteAuth.passwordHint = status?.passwordHint || '';
+    this.siteAuth.checked = true;
+
+    if (this.siteAuth.required && !this.siteAuth.authorized) {
+      this.showSiteAuthOverlay(
+        this.siteAuth.lockedOut
+          ? `Too many failed attempts. Try again in ${this.siteAuth.retryAfter} seconds.`
+          : this.siteAuth.passwordHint || 'This site is password protected. Enter the password to continue.',
+        this.siteAuth.lockedOut
+      );
+    } else {
+      this.hideSiteAuthOverlay();
+    }
+
+    this.updateSiteAuthIndicator();
+    return this.siteAuth;
+  }
+
+  showSiteAuthOverlay(message = '', isError = false) {
+    const overlay = document.getElementById('site-auth-overlay');
+    const messageEl = document.getElementById('site-auth-message');
+    const input = document.getElementById('site-auth-password');
+
+    if (!overlay) {
+      return;
+    }
+
+    overlay.hidden = false;
+    document.body.classList.add('site-auth-open');
+
+    if (messageEl) {
+      messageEl.innerHTML = message
+        || this.siteAuth.passwordHint
+        || 'This site is password protected. Enter the password to continue.';
+      messageEl.classList.toggle('is-error', Boolean(isError));
+    }
+
+    if (input) {
+      input.value = '';
+      setTimeout(() => input.focus(), 0);
+    }
+  }
+
+  hideSiteAuthOverlay() {
+    const overlay = document.getElementById('site-auth-overlay');
+    if (overlay) {
+      overlay.hidden = true;
+    }
+    document.body.classList.remove('site-auth-open');
+  }
+
+  async submitSitePassword(password) {
+    const value = typeof password === 'string' ? password.trim() : '';
+    if (!value) {
+      this.showSiteAuthOverlay('Please enter the site password.', true);
+      return;
+    }
+
+    if (!this.api) {
+      this.initAPI('');
+    }
+
+    const submit = document.getElementById('site-auth-submit');
+    if (submit) {
+      submit.disabled = true;
+      submit.textContent = 'Checking...';
+    }
+
+    const storageKey = window.SITE_PASSWORD_STORAGE_KEY;
+    let previous = '';
+    try {
+      previous = localStorage.getItem(storageKey) || '';
+      localStorage.setItem(storageKey, value);
+    } catch (_error) {
+      // Private mode or storage disabled: still try the password this once.
+    }
+
+    try {
+      const status = await this.api.checkGatewayStatus();
+      if (status?.authRequired && status?.authorized === false) {
+        // Rejected: put back whatever was stored before so a typo does not
+        // silently overwrite a working password.
+        try {
+          if (previous) {
+            localStorage.setItem(storageKey, previous);
+          } else {
+            localStorage.removeItem(storageKey);
+          }
+        } catch (_error) {}
+
+        this.siteAuth.authorized = false;
+        this.siteAuth.lockedOut = Boolean(status.lockedOut);
+        this.siteAuth.retryAfter = Number(status.retryAfter) || 0;
+        this.updateSiteAuthIndicator();
+        this.showSiteAuthOverlay(
+          this.siteAuth.lockedOut
+            ? `Too many failed attempts. Try again in ${this.siteAuth.retryAfter} seconds.`
+            : 'That password was not accepted. Please try again.',
+          true
+        );
+        return;
+      }
+
+      this.siteAuth.required = Boolean(status?.authRequired);
+      this.siteAuth.authorized = true;
+      this.siteAuth.lockedOut = false;
+      this.siteAuth.retryAfter = 0;
+      this.hideSiteAuthOverlay();
+      this.updateSiteAuthIndicator();
+      this.updateDebug('status', 'Site password accepted.');
+      this.showConfigMessage('Site password accepted and stored in this browser.', 'success');
+    } catch (error) {
+      this.showSiteAuthOverlay(`Could not reach the server: ${error.message}`, true);
+    } finally {
+      if (submit) {
+        submit.disabled = false;
+        submit.textContent = 'Unlock';
+      }
+    }
+  }
+
+  lockSite() {
+    try {
+      localStorage.removeItem(window.SITE_PASSWORD_STORAGE_KEY);
+    } catch (_error) {}
+
+    this.siteAuth.authorized = false;
+    this.updateSiteAuthIndicator();
+    this.updateDebug('status', 'Site password forgotten.');
+    this.showConfigMessage('Site password forgotten in this browser.', 'success');
+    this.refreshSiteAuthStatus().catch(() => {});
+  }
+
+  updateSiteAuthIndicator() {
+    const indicator = document.getElementById('site-auth-indicator');
+    if (!indicator) {
+      return;
+    }
+
+    indicator.classList.remove('is-valid', 'is-missing');
+
+    if (!this.siteAuth.checked) {
+      indicator.classList.add('is-missing');
+      indicator.textContent = 'Site password unknown';
+      return;
+    }
+
+    if (!this.siteAuth.required) {
+      indicator.classList.add('is-valid');
+      indicator.textContent = 'No password required';
+      return;
+    }
+
+    if (this.siteAuth.authorized) {
+      indicator.classList.add('is-valid');
+      indicator.textContent = 'Unlocked in this browser';
+      return;
+    }
+
+    indicator.classList.add('is-missing');
+    indicator.textContent = 'Locked';
+  }
+
   initAPI(key = '') {
     this.api = new ChineseQAAPI(key);
     const mode = this.api.getMode();
@@ -695,9 +908,36 @@ class ChineseQAApp {
     await this.submitQuery(question, 'Q5', sentence);
   }
 
+  async handleQuestion6() {
+    const word = document.getElementById('q6-word').value.trim();
+
+    if (!word) {
+      this.showResponse('Please fill in all fields', true, 'Q6');
+      return;
+    }
+
+    const question = `How do I use "${word}" in a natural sentence? `
+      + `Suggest several natural sentences that use "${word}", and for each one explain its meaning `
+      + `and note the level of politeness or formality it conveys. `
+      + `First ensure that if "${word}" needs other characters to make it a common complete word, those characters are included appropriately.`;
+    await this.submitQuery(question, 'Q6', word);
+  }
+
   async submitQuery(question, source, context = '') {
     if (!this.api) {
       this.initAPI('');
+    }
+
+    // The gateway rejects unauthenticated requests anyway; catching it here
+    // just avoids a doomed round trip and surfaces the prompt immediately.
+    if (this.siteAuth.required && !this.siteAuth.authorized) {
+      this.showResponse(
+        this.siteAuth.passwordHint || 'This site is password protected. Enter the password to continue.',
+        true,
+        source
+      );
+      this.showSiteAuthOverlay();
+      return;
     }
 
     const mode = this.api.getMode();
@@ -740,6 +980,21 @@ class ChineseQAApp {
         this.updateDebug('raw', err.raw);
       }
       this.updateDebug('parsed', err.message);
+
+      // A 401 means the stored password is gone or wrong; a 429 auth_locked
+      // means this client burned its failed-attempt budget. Re-probe so the
+      // overlay shows the current state instead of a stale one.
+      if (err?.code === 'auth_required' || err?.status === 401) {
+        this.siteAuth.authorized = false;
+        this.updateSiteAuthIndicator();
+        this.showSiteAuthOverlay(
+          this.siteAuth.passwordHint || 'This site is password protected. Enter the password to continue.',
+          true
+        );
+      } else if (err?.code === 'auth_locked') {
+        this.refreshSiteAuthStatus().catch(() => {});
+      }
+
       this.showResponse(`Error: ${err.message}`, true, source);
     }
   }
@@ -750,7 +1005,8 @@ class ChineseQAApp {
       Q2: 'q2-submit',
       Q3: 'q3-submit',
       Q4: 'q4-submit',
-      Q5: 'q5-submit'
+      Q5: 'q5-submit',
+      Q6: 'q6-submit'
     };
 
     const buttonId = buttonIdBySource[source];

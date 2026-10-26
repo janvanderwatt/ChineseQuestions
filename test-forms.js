@@ -7,7 +7,7 @@ const q1 = {
   char: '很',
   sentence: '我的朋友很高'
 };
-const q1_prompt = `What does the character "${q1.char}" mean in this sentence: "${q1.sentence}"?`;
+const q1_prompt = `What does "${q1.char}" mean, or what function does it perform, in this sentence: "${q1.sentence}"?`;
 console.log('Q1 Test:');
 console.log('  Input:', q1);
 console.log('  Prompt:', q1_prompt);
@@ -35,13 +35,27 @@ console.log('  Input:', q3);
 console.log('  Prompt:', q3_prompt);
 console.log('  ✓ Valid\n');
 
+// Test Q6: Word usage
+const q6 = {
+  word: '担心'
+};
+const q6_prompt = `How do I use "${q6.word}" in a natural sentence? `
+  + `Suggest several natural sentences that use "${q6.word}", and for each one explain its meaning `
+  + `and note the level of politeness or formality it conveys. `
+  + `First ensure that if "${q6.word}" needs other characters to make it a common complete word, those characters are included appropriately.`;
+console.log('Q6 Test:');
+console.log('  Input:', q6);
+console.log('  Prompt:', q6_prompt);
+console.log('  ✓ Valid\n');
+
 // Test validation (empty fields)
 console.log('=== Validation Tests ===\n');
 
 const emptyTests = [
   { q1: { char: '', sentence: '我的朋友很高' }, expected: 'FAIL (empty char)' },
   { q2: { phrase_alt: '', phrase_correct: '矮', sentence: '我的朋友很矮' }, expected: 'FAIL (empty phrase)' },
-  { q3: { sentence: '' }, expected: 'FAIL (empty sentence)' }
+  { q3: { sentence: '' }, expected: 'FAIL (empty sentence)' },
+  { q6: { word: '' }, expected: 'FAIL (empty word)' }
 ];
 
 console.log('Empty field checks: All would correctly show error message');
