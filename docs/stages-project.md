@@ -65,6 +65,20 @@
 - [x] Prepare for web deployment
 - [x] Verify deploy script end-to-end (`py .\deploy.py`)
 
+## Stage 9: Model Replacement + Deploy Safety ✓
+- [x] Replace the Stage 8 free-model default: the free roster no longer has a Chinese-native model and `nemotron-3-super:free` went paid
+- [x] Default to `z-ai/glm-4.5-air` with `tencent/hy3` behind it (paid, ~$0.0008 per question)
+- [x] Add `test-models.js` to compare candidates on 8 tricky sentences (5 real errors + 3 correct-sentence traps) through the app's own prompt
+- [x] Answer all 8 correctly on GLM; Hy3 matched it once reasoning was handled
+- [x] Send `reasoning: { enabled: false }` — Hy3 spent the whole 700-token budget thinking and returned empty content on 7 of 8
+- [x] Deploy to `v1-chineseqa.lightcat.org` and verify the gateway, the key and both models answering a live grammar question
+- [x] Make `deploy.py` refuse to wipe a target holding files it did not upload (`--force` overrides) and reject non-POSIX paths
+- [x] Fix the deploy docs to target `v1/public` (the app root also holds `current`, `v1/` and `var/rate-limit`) and document `MSYS_NO_PATHCONV=1`
+- [x] Align the documented rate limits with the live setting (5 req/min, 50 req/day)
+- [x] Force LF line endings (`.gitattributes`, repo-local `core.autocrlf=false`) and add `.editorconfig`
+- [x] Verify with the four JS test files, `php -l`, and the live gateway status probe
+- [x] Push all of it to `origin/master`
+
 ## Future Hardening Notes
 - [ ] Add gateway request size limits
 - [ ] Add requestBody allowlist validation in PHP gateway
