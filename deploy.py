@@ -2,9 +2,15 @@
 """Deploy the static site to a remote server using SSH host aliases + SCP.
 
 Usage examples:
-    python deploy.py --host demo-box --remote-dir /var/www/chineseqa
-    python deploy.py --host demo-box --remote-dir /var/www/chineseqa --dry-run
-    python deploy.py --host demo-box --remote-dir /var/www/chineseqa --no-config
+    python deploy.py --host demo-box --remote-dir /var/www/chineseqa/public
+    python deploy.py --host demo-box --remote-dir /var/www/chineseqa/public --dry-run
+    python deploy.py --host demo-box --remote-dir /var/www/chineseqa/public --no-config
+
+The remote directory is emptied before upload, so point --remote-dir at the
+app's public directory, never at the app root (which usually also holds the
+version dirs, a 'current' symlink and rate-limit state). The directory is
+checked before the wipe and the deploy aborts if it holds anything other than
+the files/folders being uploaded, unless --force is passed.
 """
 
 from __future__ import annotations
@@ -41,6 +47,14 @@ def run_cmd(command: list[str], cwd: Path | None = None, dry_run: bool = False) 
         return
 
     subprocess.run(command, cwd=str(cwd) if cwd else None, check=True)
+
+
+def run_cmd_output(command: list[str]) -> str:
+    """Run a read-only remote command and return its stdout."""
+
+    print(f"> {' '.join(command)}")
+    completed = subprocess.run(command, check=True, capture_output=True, text=True)
+    return completed.stdout
 
 
 def get_deploy_items(project_dir: Path, include_config: bool) -> list[Path]:
@@ -86,6 +100,7 @@ def deploy(
     project_dir: Path = Path("."),
     dry_run: bool = False,
     include_config: bool = True,
+    force: bool = False,
 ) -> None:
     """Deploy local static app files to a remote directory.
 
@@ -95,6 +110,7 @@ def deploy(
         project_dir: Local project root folder.
         dry_run: Print commands only.
         include_config: Include config.js in deployment.
+        force: Allow the wipe even when the target holds unexpected entries.
     """
 
     on_windows = sys.platform.startswith("win")
@@ -104,6 +120,18 @@ def deploy(
     project_dir = project_dir.resolve()
     if not project_dir.exists():
         raise DeployError(f"Project directory not found: {project_dir}")
+
+    # Git Bash / MSYS rewrites a leading '/' in command-line arguments into a
+    # Windows path, so '--remote-dir /home/me/app/public' can arrive here as
+    # 'C:/Program Files/Git/home/me/app/public' and get created as junk on the
+    # server. Reject anything that is not a plain POSIX absolute path.
+    if not remote_dir.startswith("/"):
+        raise DeployError(
+            f"remote_dir must be an absolute POSIX path, got {remote_dir!r}. "
+            "On Git Bash/MSYS a leading '/' in an argument gets rewritten to a "
+            "Windows path; prefix the command with MSYS_NO_PATHCONV=1 or use "
+            "the built-in default."
+        )
 
     deploy_items = get_deploy_items(project_dir, include_config)
 
@@ -143,6 +171,24 @@ def deploy(
             f"Run once to fix ownership, then retry: {fix_hint}"
         ) from exc
 
+    # Safety rail: the next command deletes everything in remote_dir. Abort if
+    # that directory holds entries this deploy did not put there -- pointing
+    # --remote-dir at an app root would otherwise destroy the version dirs,
+    # the 'current' symlink and the rate-limit counters.
+    if not dry_run:
+        listing = run_cmd_output(
+            [ssh_exec, host_alias, f"set -e; mkdir -p {sh_quote(remote_dir)}; ls -A1 {sh_quote(remote_dir)}"]
+        )
+        allowed_names = {item.name for item in deploy_items}
+        unexpected = sorted({line.strip() for line in listing.splitlines() if line.strip()} - allowed_names)
+        if unexpected and not force:
+            raise DeployError(
+                f"Refusing to wipe {remote_dir}: it also contains {', '.join(unexpected)}. "
+                "Point --remote-dir at the app's public directory (for example "
+                ".../apps/<app>/v1/public), or pass --force if those entries really "
+                "should be deleted."
+            )
+
     run_cmd([ssh_exec, host_alias, remote_prepare], dry_run=dry_run)
 
     remote_target = f"{host_alias}:{remote_dir.rstrip('/')}/"
@@ -181,6 +227,11 @@ def parse_args() -> argparse.Namespace:
         help="Do not upload config.js",
     )
     parser.add_argument("--dry-run", action="store_true", help="Print commands only")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Wipe the target even if it holds files this deploy did not upload",
+    )
     return parser.parse_args()
 
 
@@ -194,6 +245,7 @@ def main() -> int:
             project_dir=Path(args.project_dir),
             dry_run=args.dry_run,
             include_config=not args.no_config,
+            force=args.force,
         )
     except (DeployError, subprocess.CalledProcessError) as exc:
         print(f"Deploy failed: {exc}")

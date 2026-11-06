@@ -3,15 +3,15 @@
 // Fallback config if config.js is missing.
 window.CONFIG = window.CONFIG || {
   OPENROUTER_API_KEY: '',
-  OPENROUTER_MODEL: 'google/gemma-4-26b-a4b-it:free',
-  OPENROUTER_MODEL_FALLBACKS: ['nvidia/nemotron-3-super-120b-a12b:free'],
+  OPENROUTER_MODEL: 'z-ai/glm-4.5-air',
+  OPENROUTER_MODEL_FALLBACKS: ['tencent/hy3'],
   API_BASE: 'https://openrouter.ai/api/v1',
   GATEWAY_URL: '/api/openrouter-gateway.php'
 };
 
 // Used only when config.js supplies no usable model list.
-const BUILTIN_DEFAULT_MODEL = 'google/gemma-4-26b-a4b-it:free';
-const BUILTIN_DEFAULT_FALLBACKS = ['nvidia/nemotron-3-super-120b-a12b:free'];
+const BUILTIN_DEFAULT_MODEL = 'z-ai/glm-4.5-air';
+const BUILTIN_DEFAULT_FALLBACKS = ['tencent/hy3'];
 
 // --- Optional shared site password ------------------------------------------
 // The gateway may require a password (set SITE_PASSWORD_HASH in
@@ -43,9 +43,10 @@ class ChineseQAAPI {
   }
 
   // Build the ordered model list: configured primary first, then any
-  // configured fallbacks. Unlike the previous version this does NOT rewrite
-  // 'openrouter/auto' into a paid model -- whatever is configured is used
-  // verbatim, so the no-key path never silently spends credits.
+  // configured fallbacks. Whatever is configured is used verbatim -- no
+  // 'openrouter/auto' rewriting. The shipped defaults are cheap paid
+  // Chinese-native models (fractions of a cent per question); the free-tier
+  // roster has no Chinese-native model left and turns over every few weeks.
   _resolveModels() {
     const clean = value => (typeof value === 'string' ? value.trim() : '');
 
@@ -234,6 +235,12 @@ class ChineseQAAPI {
       ],
       temperature: 0.3,
       max_tokens: 700,
+      // Reasoning models can spend the whole max_tokens budget on internal
+      // reasoning and return empty content (Hy3 did this on 7 of 8 test
+      // sentences at 700 tokens, finish_reason "length"). These answers are
+      // short explanations, so reasoning buys nothing here -- turning it off
+      // also cuts latency and cost.
+      reasoning: { enabled: false },
       stream
     };
   }

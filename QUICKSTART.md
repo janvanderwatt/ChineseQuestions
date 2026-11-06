@@ -40,9 +40,9 @@ Responses stream in as markdown. The response box appears under the template you
 ## Features
 
 - **Two modes**: Local key → direct OpenRouter calls; no key → server PHP gateway
-- **Rate limiting**: 3 req/min, 50 req/day per IP (configurable, rolling windows)
+- **Rate limiting**: 5 req/min, 50 req/day per IP (configurable, rolling windows)
 - **Optional site password**: bcrypt hash in gateway config; entered once, stored in `localStorage`; "Lock site" button forgets it
-- **Model fallbacks**: free-tier models by default (`gemma-4-26b`, `nemotron-3-super`)
+- **Model fallbacks**: cheap Chinese-native models by default (`glm-4.5-air`, then `tencent/hy3`)
 - **Mobile-friendly**: compact layout, template rows stay mostly one-line
 - **Config section**: collapsible, closed by default; key validated before save; saved key never shown back
 
@@ -55,7 +55,16 @@ Use the deploy script to copy essential static files to your web server:
 python deploy.py --dry-run
 
 # Deploy
-python deploy.py --host lightcatorg-lightcatorg --remote-dir /home/lightcatorg/apps/chineseqa
+python deploy.py --host lightcatorg-lightcatorg \
+  --remote-dir /home/lightcatorg/apps/chineseqa/v1/public
+```
+
+> **The target directory is emptied before upload.** Point `--remote-dir` at the app's `public` directory only. The app root (`/home/lightcatorg/apps/chineseqa`) also holds `current`, `v1/` and `var/rate-limit`, so targeting it would delete the live app. The script refuses to wipe a directory containing anything it did not upload unless you pass `--force`.
+
+On Git Bash, pass an explicit `--remote-dir` with `MSYS_NO_PATHCONV=1`, otherwise the leading `/` is rewritten into a Windows path:
+
+```bash
+MSYS_NO_PATHCONV=1 python deploy.py --remote-dir /home/lightcatorg/apps/chineseqa/v1/public
 ```
 
 **What gets deployed:**
@@ -69,6 +78,7 @@ Optional flags:
 - `--remote-dir <path>`
 - `--project-dir <path>`
 - `--no-config` (skip config.js)
+- `--force` (wipe the target even when it holds files this deploy did not upload)
 
 ## Testing Locally
 

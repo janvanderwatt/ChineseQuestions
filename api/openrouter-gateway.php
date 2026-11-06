@@ -24,7 +24,7 @@ if (is_file($localConfigPath)) {
 // Two independent controls, both configured in gateway-config.php:
 //   * an optional shared site password, sent by the browser as the
 //     X-Site-Password header and checked against a password_hash();
-//   * per-client rate limits (default 3/minute, 50/day) kept in a JSON file
+//   * per-client rate limits (default 5/minute, 50/day) kept in a JSON file
 //     outside the deploy target so a redeploy does not reset the counters.
 // ---------------------------------------------------------------------------
 
@@ -170,7 +170,7 @@ function rl_mutate(string $storeFile, callable $mutator)
  */
 function rl_hit_gate(string $storeFile, string $clientKey, array $config, bool $clearFailures): array
 {
-    $perMinute = rl_config_int($config, 'RATE_LIMIT_PER_MINUTE', 3);
+    $perMinute = rl_config_int($config, 'RATE_LIMIT_PER_MINUTE', 5);
     $perDay = rl_config_int($config, 'RATE_LIMIT_PER_DAY', 50);
 
     if ($perMinute === 0 && $perDay === 0 && !$clearFailures) {
@@ -365,7 +365,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
         'lockedOut' => $lockedOut,
         'retryAfter' => $retryAfter,
         'limits' => [
-            'perMinute' => rl_config_int($localConfig, 'RATE_LIMIT_PER_MINUTE', 3),
+            'perMinute' => rl_config_int($localConfig, 'RATE_LIMIT_PER_MINUTE', 5),
             'perDay' => rl_config_int($localConfig, 'RATE_LIMIT_PER_DAY', 50),
         ],
         'passwordHint' => rl_site_password_hint($localConfig),
@@ -416,16 +416,17 @@ if (!$requestBody) {
         exit;
     }
 
-    // Default only applies when the client sends no model. Kept free so a
-    // bare prompt does not silently spend credits. Matches the browser-side
-    // default in config.js / src/api.js.
+    // Default only applies when the client sends no model. Matches the
+    // browser-side default in config.js / src/api.js -- a cheap paid
+    // Chinese-native model, not a free-tier slug (those churn weekly and no
+    // longer include a Chinese-native model).
     $configuredModel = isset($localConfig['OPENROUTER_MODEL']) && is_string($localConfig['OPENROUTER_MODEL'])
         ? trim($localConfig['OPENROUTER_MODEL'])
         : '';
 
     $model = isset($input['model']) && is_string($input['model']) && trim($input['model']) !== ''
         ? trim($input['model'])
-        : ($configuredModel !== '' ? $configuredModel : 'google/gemma-4-26b-a4b-it:free');
+        : ($configuredModel !== '' ? $configuredModel : 'z-ai/glm-4.5-air');
 
     $requestBody = [
         'model' => $model,
@@ -434,6 +435,9 @@ if (!$requestBody) {
         ],
         'temperature' => 0.7,
         'max_tokens' => 700,
+        // Reasoning models can burn the whole budget thinking and return an
+        // empty body; see the note in src/api.js.
+        'reasoning' => ['enabled' => false],
     ];
 }
 
@@ -449,7 +453,7 @@ if ($payload === false) {
 //
 // Enforced here rather than in the browser so it cannot be bypassed by
 // calling the endpoint directly. A rejected password attempt does not spend
-// the request budget; only authorized requests count against 3/min, 50/day.
+// the request budget; only authorized requests count against 5/min, 50/day.
 
 $clientKey = rl_client_key($localConfig);
 $sitePasswordHash = rl_site_password_hash($localConfig);

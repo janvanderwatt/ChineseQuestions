@@ -7,13 +7,13 @@ return [
     'OPENROUTER_API_BASE' => 'https://openrouter.ai/api/v1',
 
     // Optional: pin the model the gateway uses when the client sends none.
-    // Free slug so a bare prompt does not spend credits.
-    'OPENROUTER_MODEL' => 'google/gemma-4-26b-a4b-it:free',
+    // Cheap paid Chinese-native slug; fractions of a cent per question.
+    'OPENROUTER_MODEL' => 'z-ai/glm-4.5-air',
 
     // --- Abuse protection ---------------------------------------------------
     // Requests allowed per client IP. Set either to 0 to disable that window.
     // Counters are pruned continuously, so the day window is a rolling 24h.
-    'RATE_LIMIT_PER_MINUTE' => 3,
+    'RATE_LIMIT_PER_MINUTE' => 5,
     'RATE_LIMIT_PER_DAY' => 50,
 
     // Where the JSON counters live. Defaults to a 'var/rate-limit' directory

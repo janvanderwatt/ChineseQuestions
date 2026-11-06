@@ -48,7 +48,16 @@ The app runs on any web server with PHP 8.1+. The deploy script copies the stati
 python deploy.py --dry-run
 
 # Deploy
-python deploy.py --host lightcatorg-lightcatorg --remote-dir /home/lightcatorg/apps/chineseqa
+python deploy.py --host lightcatorg-lightcatorg \
+  --remote-dir /home/lightcatorg/apps/chineseqa/v1/public
+```
+
+> **The target directory is emptied before upload.** Always point `--remote-dir` at the app's `public` directory. The app root (`/home/lightcatorg/apps/chineseqa`) also holds `current`, `v1/` and `var/rate-limit`, so targeting it would delete the live app. The script refuses to wipe a directory containing anything it did not upload unless you pass `--force`.
+
+On Git Bash, pass an explicit `--remote-dir` with `MSYS_NO_PATHCONV=1` — otherwise the leading `/` is rewritten into a Windows path:
+
+```bash
+MSYS_NO_PATHCONV=1 python deploy.py --remote-dir /home/lightcatorg/apps/chineseqa/v1/public
 ```
 
 **What gets deployed:**
@@ -69,9 +78,9 @@ cp api/gateway-config.example.php api/gateway-config.php
 ```
 
 The gateway handles:
-- **Rate limiting**: 3 req/min, 50 req/day per IP (configurable, rolling windows)
+- **Rate limiting**: 5 req/min, 50 req/day per IP (configurable, rolling windows)
 - **Optional shared password**: one bcrypt hash, stored in `localStorage` after first entry
-- **Model fallbacks**: free-tier models by default, configurable
+- **Model fallbacks**: cheap Chinese-native models by default (`glm-4.5-air`, with `tencent/hy3` behind it), configurable
 
 ---
 
