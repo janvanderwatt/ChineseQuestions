@@ -1,0 +1,4 @@
+# Keep every text file LF in the repository and in the working tree, whatever
+# core.autocrlf the machine has set. Binary files are auto-detected and left
+# untouched.
+* text=auto eol=lf
